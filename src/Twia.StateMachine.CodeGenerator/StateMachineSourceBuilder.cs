@@ -11,7 +11,7 @@ namespace Twia.StateMachine.CodeGenerator;
 
 public class StateMachineSourceBuilder
 {
-    public void  AddSource(SourceProductionContext context, StateMachineDeclaration declaration)
+    public void AddSource(SourceProductionContext context, StateMachineDeclaration declaration)
     {
         try
         {
