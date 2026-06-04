@@ -45,7 +45,7 @@ internal class ObservableBuilder : BuilderBase
     public override bool AddEvents()
     {
         _document.WriteLine("/// <inheritdoc />");
-        _document.WriteLine($"public event EventHandler<StateChangedEventArgs<{_statesBuilder.StateFullTypeName}>>? OnStateChanged;");
+        _document.WriteLine($"public event global::System.EventHandler<StateChangedEventArgs<{_statesBuilder.StateFullTypeName}>>? OnStateChanged;");
         return true;
     }
 
