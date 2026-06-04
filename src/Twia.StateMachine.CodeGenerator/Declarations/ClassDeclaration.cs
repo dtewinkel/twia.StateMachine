@@ -4,7 +4,7 @@ using Microsoft.CodeAnalysis.CSharp.Syntax;
 
 namespace Twia.StateMachine.CodeGenerator.Declarations;
 
-public class ClassDeclaration : Declaration, IEquatable<ClassDeclaration>
+public record ClassDeclaration : Declaration
 {
     public ClassDeclaration(ClassDeclarationSyntax node) : base(node)
     {
@@ -49,20 +49,6 @@ public class ClassDeclaration : Declaration, IEquatable<ClassDeclaration>
                && (ReferenceEquals(Parent, other.Parent) || (Parent?.Equals(other.Parent) ?? false));
     }
 
-    public override bool Equals(object? other)
-    {
-        return other is ClassDeclaration otherClassDeclaration && Equals(otherClassDeclaration);
-    }
-
-    public override int GetHashCode()
-    {
-        unchecked
-        {
-            var hash = 31;
-            hash = hash * 37 + Name.GetHashCode();
-            hash = hash * 37 + Modifiers.GetHashCode();
-            hash = hash * 37 + IsPartial.GetHashCode();
-            return hash * 37 + (Parent?.GetHashCode() ?? 0);
-        }
-    }
+    public override int GetHashCode() 
+        => HashCode.Combine(Name, Modifiers, IsPartial, Parent);
 }

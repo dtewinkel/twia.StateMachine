@@ -3,7 +3,7 @@ using Microsoft.CodeAnalysis.CSharp.Syntax;
 
 namespace Twia.StateMachine.CodeGenerator.Declarations;
 
-public sealed class StateMachineDeclaration : ClassDeclaration, IEquatable<StateMachineDeclaration>
+public sealed record StateMachineDeclaration : ClassDeclaration, IEquatable<StateMachineDeclaration>
 {
     public StateMachineDeclaration(ClassDeclarationSyntax node, INamedTypeSymbol symbol) : base(node)
     {
@@ -48,27 +48,18 @@ public sealed class StateMachineDeclaration : ClassDeclaration, IEquatable<State
                && Methods.SequenceEqual(other.Methods);
     }
 
-    public override bool Equals(object? other)
-    {
-        return other is StateMachineDeclaration otherStateMachineDeclaration
-               && Equals(otherStateMachineDeclaration);
-    }
-
     public override int GetHashCode()
     {
-        unchecked
+        var hash = new HashCode();
+        hash.Add(base.GetHashCode());
+        hash.Add(Observable);
+        hash.Add(StateAccessible);
+
+        foreach (var method in Methods)
         {
-            var hash = base.GetHashCode();
-            hash = hash * 31 + Observable.GetHashCode();
-            hash = hash * 31 + StateAccessible.GetHashCode();
-
-            if (Methods.Count > 0)
-            {
-                hash = hash * 31 + Methods.Count;
-                hash = Methods.Aggregate(hash, (current, method) => current * 31 + method.GetHashCode());
-            }
-
-            return hash;
+            hash.Add(method);
         }
+
+        return hash.ToHashCode();
     }
 }

@@ -2,12 +2,4 @@
 
 namespace Twia.StateMachine.CodeGenerator.Declarations;
 
-public abstract class Declaration
-{
-    protected Declaration(CSharpSyntaxNode node)
-    {
-        Node = node;
-    }
-
-    public CSharpSyntaxNode Node { get;  }
-}
+public abstract record Declaration(CSharpSyntaxNode Node);

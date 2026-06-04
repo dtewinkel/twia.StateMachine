@@ -4,7 +4,7 @@ using Microsoft.CodeAnalysis.CSharp.Syntax;
 
 namespace Twia.StateMachine.CodeGenerator.Declarations;
 
-public sealed class MethodDeclaration : Declaration, IEquatable<MethodDeclaration>
+public sealed record MethodDeclaration : Declaration
 {
     public MethodDeclaration(MethodDeclarationSyntax node, IList<AttributeData> attributes) : base(node)
     {
@@ -84,25 +84,27 @@ public sealed class MethodDeclaration : Declaration, IEquatable<MethodDeclaratio
                && Transitions.SequenceEqual(other.Transitions);
     }
 
-    public override bool Equals(object? other)
-    {
-        return other is MethodDeclaration otherMethodDeclaration && Equals(otherMethodDeclaration);
-    }
-
     public override int GetHashCode()
     {
-        unchecked
+        var hash = new HashCode();
+        hash.Add(Name);
+        hash.Add(Modifiers);
+        hash.Add(ReturnType);
+        hash.Add(IsInitial);
+        hash.Add(IsState);
+        hash.Add(IsPartial);
+        hash.Add(IsTrigger);
+
+        foreach (var parameter in Parameters)
         {
-            var hash = 23;
-            hash = hash * 37 + Name.GetHashCode();
-            hash = hash * 37 + Modifiers.GetHashCode();
-            hash = hash * 37 + ReturnType.GetHashCode();
-            hash = hash * 37 + IsInitial.GetHashCode();
-            hash = hash * 37 + IsState.GetHashCode();
-            hash = hash * 37 + IsPartial.GetHashCode();
-            hash = Parameters.Aggregate(hash, (current, parameter) => current * 37 + parameter.GetHashCode());
-            hash = Transitions.Aggregate(hash, (current, transition) => current * 37 + transition.GetHashCode());
-            return hash * 37 + IsTrigger.GetHashCode();
+            hash.Add(parameter);
         }
+
+        foreach (var transition in Transitions)
+        {
+            hash.Add(transition);
+        }
+
+        return hash.ToHashCode();
     }
 }
