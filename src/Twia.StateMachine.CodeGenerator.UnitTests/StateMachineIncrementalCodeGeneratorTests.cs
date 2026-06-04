@@ -1,4 +1,7 @@
-﻿using Microsoft.CodeAnalysis.Testing;
+﻿using System.IO;
+using System.Threading.Tasks;
+using Microsoft.CodeAnalysis.Testing;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Twia.StateMachine.CodeGenerator.UnitTests.Verifiers;
 
 namespace Twia.StateMachine.CodeGenerator.UnitTests;

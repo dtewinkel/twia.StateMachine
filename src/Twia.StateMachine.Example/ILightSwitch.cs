@@ -1,4 +1,7 @@
-﻿namespace Twia.StateMachine.Example;
+﻿using System.Threading;
+using System.Threading.Tasks;
+
+namespace Twia.StateMachine.Example;
 
 public interface ILightSwitch
 {

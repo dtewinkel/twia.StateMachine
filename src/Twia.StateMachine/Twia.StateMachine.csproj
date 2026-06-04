@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>netstandard2.0</TargetFramework>
+    <TargetFrameworks>net10.0;net9.0;net8.0</TargetFrameworks>
     <LangVersion>default</LangVersion>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
@@ -42,7 +42,7 @@
   </Target>
 
   <ItemGroup>
-    <None Include="../Twia.StateMachine.CodeGenerator/bin/$(Configuration)/netstandard2.0/Twia.StateMachine.CodeGenerator.dll" Pack="true" PackagePath="analyzers/dotnet/cs" Visible="false" />
+    <None Include="../Twia.StateMachine.CodeGenerator/bin/$(Configuration)/net8.0/Twia.StateMachine.CodeGenerator.dll" Pack="true" PackagePath="analyzers/dotnet/cs" Visible="false" />
     <None Include="images/twia-logo-128.png" Pack="true" PackagePath="/" Visible="true" />
     <None Include="../../LICENSE.md" Pack="true" PackagePath="/" Link="LICENSE.md" />
     <None Include="../../README.md" Pack="true" PackagePath="/" Link="README.md" />
