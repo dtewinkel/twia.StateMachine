@@ -1,8 +1,10 @@
-﻿using Microsoft.CodeAnalysis.CSharp;
+﻿using Generator.Equals;
+using Microsoft.CodeAnalysis.CSharp;
 
 namespace Twia.StateMachine.CodeGenerator.Declarations;
 
-public abstract record ParentDeclaration : Declaration
+[Equatable]
+public abstract partial record ParentDeclaration : Declaration
 {
     protected ParentDeclaration(CSharpSyntaxNode node) : base(node)
     {

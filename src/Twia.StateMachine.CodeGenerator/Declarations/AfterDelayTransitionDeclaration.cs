@@ -1,8 +1,10 @@
-﻿using Microsoft.CodeAnalysis;
+﻿using Generator.Equals;
+using Microsoft.CodeAnalysis;
 
 namespace Twia.StateMachine.CodeGenerator.Declarations;
 
-public class AfterDelayTransitionDeclaration : TransitionDeclaration
+[Equatable]
+public partial record AfterDelayTransitionDeclaration : TransitionDeclaration
 {
     public AfterDelayTransitionDeclaration(string stateName, int index, AttributeData attributeData)
     {

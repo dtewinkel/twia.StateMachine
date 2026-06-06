@@ -1,10 +1,12 @@
-﻿using Microsoft.CodeAnalysis;
+﻿using Generator.Equals;
+using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 
 namespace Twia.StateMachine.CodeGenerator.Declarations;
 
-public sealed record MethodDeclaration : Declaration
+[Equatable]
+public sealed partial record MethodDeclaration : Declaration
 {
     public MethodDeclaration(MethodDeclarationSyntax node, IList<AttributeData> attributes) : base(node)
     {
@@ -62,49 +64,9 @@ public sealed record MethodDeclaration : Declaration
 
     public bool IsInitial { get; }
 
+    [OrderedEquality]
     public List<string> Parameters { get; } = [];
 
+    [OrderedEquality]
     public List<TransitionDeclaration> Transitions { get; } = [];
-
-    public bool Equals(MethodDeclaration? other)
-    {
-        if (other is null)
-        {
-            return false;
-        }
-
-        return Modifiers == other.Modifiers
-               && Name == other.Name
-               && ReturnType == other.ReturnType
-               && IsPartial == other.IsPartial
-               && IsState == other.IsState
-               && IsTrigger == other.IsTrigger
-               && IsInitial == other.IsInitial
-               && Parameters.SequenceEqual(other.Parameters)
-               && Transitions.SequenceEqual(other.Transitions);
-    }
-
-    public override int GetHashCode()
-    {
-        var hash = new HashCode();
-        hash.Add(Name);
-        hash.Add(Modifiers);
-        hash.Add(ReturnType);
-        hash.Add(IsInitial);
-        hash.Add(IsState);
-        hash.Add(IsPartial);
-        hash.Add(IsTrigger);
-
-        foreach (var parameter in Parameters)
-        {
-            hash.Add(parameter);
-        }
-
-        foreach (var transition in Transitions)
-        {
-            hash.Add(transition);
-        }
-
-        return hash.ToHashCode();
-    }
 }

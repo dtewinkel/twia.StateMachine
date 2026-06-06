@@ -1,9 +1,11 @@
-﻿using Microsoft.CodeAnalysis;
+﻿using Generator.Equals;
+using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 
 namespace Twia.StateMachine.CodeGenerator.Declarations;
 
-public sealed record StateMachineDeclaration : ClassDeclaration, IEquatable<StateMachineDeclaration>
+[Equatable]
+public sealed partial record StateMachineDeclaration : ClassDeclaration
 {
     public StateMachineDeclaration(ClassDeclarationSyntax node, INamedTypeSymbol symbol) : base(node)
     {
@@ -34,32 +36,10 @@ public sealed record StateMachineDeclaration : ClassDeclaration, IEquatable<Stat
         }
     }
 
+    [OrderedEquality]
     public List<MethodDeclaration> Methods { get; } = [];
 
     public bool StateAccessible { get; }
 
     public bool Observable { get; }
-
-    public bool Equals(StateMachineDeclaration? other)
-    {
-        return base.Equals(other)
-               && StateAccessible == other.StateAccessible
-               && Observable == other.Observable
-               && Methods.SequenceEqual(other.Methods);
-    }
-
-    public override int GetHashCode()
-    {
-        var hash = new HashCode();
-        hash.Add(base.GetHashCode());
-        hash.Add(Observable);
-        hash.Add(StateAccessible);
-
-        foreach (var method in Methods)
-        {
-            hash.Add(method);
-        }
-
-        return hash.ToHashCode();
-    }
 }

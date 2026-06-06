@@ -1,10 +1,12 @@
-﻿using Microsoft.CodeAnalysis;
+﻿using Generator.Equals;
+using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 
 namespace Twia.StateMachine.CodeGenerator.Declarations;
 
-public record ClassDeclaration : Declaration
+[Equatable(IgnoreInheritedMembers = true)]
+public partial record ClassDeclaration : Declaration
 {
     public ClassDeclaration(ClassDeclarationSyntax node) : base(node)
     {
@@ -32,23 +34,9 @@ public record ClassDeclaration : Declaration
     public bool IsPartial { get; }
     public ParentDeclaration? Parent { get; }
 
+    [IgnoreEquality]
     public string? FullNamespaceName => Parent?.FullNamespaceName;
 
+    [IgnoreEquality]
     public string HintNameForSource => $"{(Parent is not null ? $"{Parent.HintNameForSource}." : "")}{Name}";
-
-    public virtual bool Equals(ClassDeclaration? other)
-    {
-        if (other is null)
-        {
-            return false;
-        }
-
-        return Modifiers == other.Modifiers
-               && Name == other.Name
-               && IsPartial == other.IsPartial
-               && (ReferenceEquals(Parent, other.Parent) || (Parent?.Equals(other.Parent) ?? false));
-    }
-
-    public override int GetHashCode() 
-        => HashCode.Combine(Name, Modifiers, IsPartial, Parent);
 }

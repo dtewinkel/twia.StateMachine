@@ -1,8 +1,10 @@
-﻿using Microsoft.CodeAnalysis;
+﻿using Generator.Equals;
+using Microsoft.CodeAnalysis;
 
 namespace Twia.StateMachine.CodeGenerator.Declarations;
 
-public class OnExitTransitionDeclaration : TransitionDeclaration
+[Equatable]
+public partial record OnExitTransitionDeclaration : TransitionDeclaration
 {
     public OnExitTransitionDeclaration(AttributeData attributeData)
     {

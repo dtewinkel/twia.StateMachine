@@ -1,5 +1,7 @@
-﻿using Microsoft.CodeAnalysis.CSharp;
+﻿using Generator.Equals;
+using Microsoft.CodeAnalysis.CSharp;
 
 namespace Twia.StateMachine.CodeGenerator.Declarations;
 
-public abstract record Declaration(CSharpSyntaxNode Node);
+[Equatable(IgnoreInheritedMembers = true)]
+public abstract partial record Declaration([property: IgnoreEquality] CSharpSyntaxNode Node);

@@ -1,8 +1,10 @@
-﻿using Microsoft.CodeAnalysis.CSharp.Syntax;
+﻿using Generator.Equals;
+using Microsoft.CodeAnalysis.CSharp.Syntax;
 
 namespace Twia.StateMachine.CodeGenerator.Declarations;
 
-public sealed record ContainingClassDeclaration : ParentDeclaration
+[Equatable]
+public sealed partial record ContainingClassDeclaration : ParentDeclaration
 {
     public ContainingClassDeclaration(ClassDeclarationSyntax classDeclaration) : base(classDeclaration)
     {
@@ -11,17 +13,12 @@ public sealed record ContainingClassDeclaration : ParentDeclaration
 
     public ClassDeclaration ClassDeclaration { get; }
 
+    [IgnoreEquality]
     public ParentDeclaration? Parent => ClassDeclaration.Parent;
 
+    [IgnoreEquality]
     public override string? FullNamespaceName => Parent?.FullNamespaceName;
 
+    [IgnoreEquality]
     public override string HintNameForSource => $"{(Parent is not null ? $"{Parent.HintNameForSource}." : "")}{ClassDeclaration.Name}";
-
-    public bool Equals(ContainingClassDeclaration? other)
-    {
-        return other is not null
-               && ClassDeclaration.Equals(other.ClassDeclaration);
-    }
-
-    public override int GetHashCode() => ClassDeclaration.GetHashCode();
 }
