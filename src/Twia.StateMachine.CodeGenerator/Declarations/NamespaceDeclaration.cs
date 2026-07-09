@@ -1,5 +1,4 @@
-﻿using Generator.Equals;
-using Microsoft.CodeAnalysis.CSharp.Syntax;
+﻿using Microsoft.CodeAnalysis.CSharp.Syntax;
 
 namespace Twia.StateMachine.CodeGenerator.Declarations;
 

@@ -4,19 +4,27 @@ using System.CodeDom.Compiler;
 using System.Diagnostics;
 using System.Globalization;
 using System.Text;
-using Twia.StateMachine.CodeGenerator.Builders;
+using Twia.StateMachine.CodeGenerator.Builders.Sync;
 using Twia.StateMachine.CodeGenerator.Declarations;
 
-namespace Twia.StateMachine.CodeGenerator;
+namespace Twia.StateMachine.CodeGenerator.Builders;
 
-public class StateMachineSourceBuilder
+public class SourceWriter : IndentedTextWriter
 {
-    public void AddSource(SourceProductionContext context, StateMachineDeclaration declaration)
+    /// <inheritdoc />
+    public SourceWriter() : base(new StringWriter(new StringBuilder(30000), CultureInfo.InvariantCulture))
+    {
+    }
+}
+
+
+public static class StateMachineSourceBuilder
+{
+    public static void AddSource(SourceProductionContext context, StateMachineDeclaration declaration)
     {
         try
         {
-            using var writer = new StringWriter(new StringBuilder(10000), CultureInfo.InvariantCulture);
-            using var document = new IndentedTextWriter(writer);
+            using var document = new SourceWriter();
 
             var classCommonBuilder = new ClassCommonBuilder(document, declaration);
             var statesBuilder = new StatesBuilder(document, declaration, classCommonBuilder);
@@ -53,7 +61,7 @@ public class StateMachineSourceBuilder
             Debug.Assert(document.Indent == 0);
 
             var hintName = $"{declaration.HintNameForSource}_StateMachine.g.cs";
-            context.AddSource(hintName, SourceText.From(writer.ToString(), Encoding.UTF8));
+            context.AddSource(hintName, SourceText.From(document.InnerWriter.ToString() ?? "", Encoding.UTF8));
         }
         catch (Exception e)
         {
@@ -61,9 +69,6 @@ public class StateMachineSourceBuilder
             throw;
         }
     }
-
-    private static List<T> GetAll<T>(List<BuilderBase> builders, Func<BuilderBase, T[]> builderFunction)
-        => [ .. builders.Where(builder => builder.IsEnabled).SelectMany(builderFunction) ];
 
     private static bool GenerateAll(List<BuilderBase> builders, IndentedTextWriter document, bool codeAdded, Func<BuilderBase, bool> builderAction)
     {

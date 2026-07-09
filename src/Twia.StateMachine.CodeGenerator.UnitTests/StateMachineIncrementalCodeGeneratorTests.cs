@@ -403,6 +403,8 @@ public sealed class StateMachineIncrementalCodeGeneratorTests
     public TestContext TestContext { get; set; }
 
     [TestMethod(DisplayName = "GenerateCode")]
+    [DataRow("AsyncNoStateNoTriggers", DisplayName = "Async NoStateNoTriggers")]
+    [DataRow("AsyncWithAttributes", DisplayName = "Async WithAttributes")]
     [DataRow("WithAttributes", DisplayName = "WithAttributes")]
     [DataRow("WithFullAttributeNames", DisplayName = "WithFullAttributeNames")]
     [DataRow("NestedClass", DisplayName = "NestedClass")]

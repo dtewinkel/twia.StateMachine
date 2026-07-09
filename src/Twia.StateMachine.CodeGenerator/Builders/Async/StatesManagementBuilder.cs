@@ -1,9 +1,13 @@
-﻿using System.CodeDom.Compiler;
+﻿using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CSharp;
+using Microsoft.CodeAnalysis.CSharp.Syntax;
+using System.CodeDom.Compiler;
+using System.Xml.Linq;
 using Twia.StateMachine.CodeGenerator.Declarations;
 
-namespace Twia.StateMachine.CodeGenerator.Builders;
+namespace Twia.StateMachine.CodeGenerator.Builders.Async;
 
-internal class StatesManagementBuilder : BuilderBase
+public class StatesManagementBuilder : BuilderBase
 {
     private readonly IndentedTextWriter _document;
     private readonly StatesBuilder _statesBuilder;
@@ -33,6 +37,8 @@ public override bool AddPublicMethods()
     private void AddInitializeMethod()
     {
         var initialStateName = _statesBuilder.InitialStateName;
+        var hasInitialState = initialStateName is not null;
+        var asyncKeyword = hasInitialState ? "async " : string.Empty;
         _document.WriteLine("/// <summary>");
         _document.WriteLine("/// Initialize the state machine before it is used.");
         _document.WriteLine("/// </summary>");
@@ -42,17 +48,21 @@ public override bool AddPublicMethods()
         _document.WriteLine("/// <exception cref=\"global::System.InvalidOperationException\">");
         _document.WriteLine("/// InitializeStateMachine() can only be called one in the life of a state machine");
         _document.WriteLine("/// </exception>");
-        _document.WriteLine("public void InitializeStateMachine()");
+        _document.WriteLine($"public {asyncKeyword}{CommonTypeNames.Task} InitializeStateMachineAsync({CommonTypeNames.CancellationToken} cancellationToken = default)");
         _document.WriteLineBlockOpen();
         _document.WriteLine($"if ({_statesBuilder.StateFieldName} != {_statesBuilder.UndefinedStateName})");
         _document.WriteLineBlockOpen();
         _document.WriteLine("""throw new global::System.InvalidOperationException("'InitializeStateMachine()' can only be called once in the lifecycle of an instance.");""");
         _document.WriteLineBlockClose();
+        _document.WriteLineNoTabs();
         if (initialStateName is not null)
         {
-            _document.WriteLineNoTabs();
             _document.WriteLine($"// Move to initial state '{initialStateName}'.");
-            _document.WriteLine($"{_statesBuilder.EnterStateMethodName}({_statesBuilder.StateFullTypeName}.{initialStateName}, \"Initial\");");
+            _document.WriteLine($"await {_statesBuilder.EnterStateMethodName}({_statesBuilder.StateFullTypeName}.{initialStateName}, \"Initial\", cancellationToken);");
+        }
+        else
+        {
+            _document.WriteLine($"return {CommonTypeNames.Task}.CompletedTask;");
         }
         _document.WriteLineBlockClose();
     }
@@ -75,37 +85,45 @@ public override bool AddPublicMethods()
     {
         const string stateParameterName = "state";
         const string reasonParameterName = "reason";
-        _document.WriteLine($"private void {_statesBuilder.EnterStateMethodName}({_statesBuilder.StateFullTypeName} {stateParameterName}, string {reasonParameterName})");
+        _document.WriteLine($"private async {CommonTypeNames.Task} {_statesBuilder.EnterStateMethodName}({_statesBuilder.StateFullTypeName} {stateParameterName}, string {reasonParameterName}, {CommonTypeNames.CancellationToken} cancellationToken = default)");
         _document.WriteLineBlockOpen();
         _afterTransitionsBuilder.AddClearTimers();
         _observableBuilder.AddObserveStateChange(stateParameterName, reasonParameterName);
         _document.WriteLine($"{_statesBuilder.StateFieldName} = {stateParameterName};");
-        _document.WriteLine($"{_triggersBuilder.InvokeTriggerMethodName}({_triggersBuilder.TriggerEnumTypeName}.{_triggersBuilder.EntryTriggerName});");
+        _document.WriteLine($"await {_triggersBuilder.InvokeTriggerMethodName}({_triggersBuilder.TriggerEnumTypeName}.{_triggersBuilder.EntryTriggerName}, cancellationToken);");
         _document.WriteLineBlockClose();
     }
 
     private void AddInvokeTriggerMethod()
     {
-        _document.WriteLine($"private void {_triggersBuilder.InvokeTriggerMethodName}({_triggersBuilder.TriggerEnumTypeName} trigger)");
+        var hasStates = _statesBuilder.HasStates;
+        var asyncKeyword = hasStates ? "async " : string.Empty;
+        _document.WriteLine($"private {asyncKeyword}{CommonTypeNames.Task} {_triggersBuilder.InvokeTriggerMethodName}({_triggersBuilder.TriggerEnumTypeName} trigger, {CommonTypeNames.CancellationToken} cancellationToken = default)");
         _document.WriteLineBlockOpen();
         _document.WriteLine($"{_triggersBuilder.LastTriggerFieldName} = trigger;");
-        if (_statesBuilder.HasStates)
+        _document.WriteLineNoTabs();
+        if (hasStates)
         {
-            _document.WriteLineNoTabs();
             _document.WriteLine($"switch ({_statesBuilder.StateFieldName})");
             _document.WriteLineBlockOpen();
             var first = true;
             foreach (var stateName in _statesBuilder.StateNames)
             {
+                var stateMethod = _statesBuilder.GetState(stateName);
+                var cancellationToken = stateMethod.CancellationTokenParameterName != null ? "cancellationToken" : "";
                 first = _document.WriteSeparatorLine(first);
                 _document.WriteLine($"case {_statesBuilder.StateFullTypeName}.{stateName}:");
                 _document.Indent++;
-                _document.WriteLine($"{stateName}();");
+                _document.WriteLine($"await {stateName}({cancellationToken});");
                 _document.WriteLine("break;");
                 _document.Indent--;
             }
 
             _document.WriteLineBlockClose();
+        }
+        else
+        {
+            _document.WriteLine($"return {CommonTypeNames.Task}.CompletedTask;");
         }
 
         _document.WriteLineBlockClose();
@@ -122,9 +140,6 @@ public override bool AddPublicMethods()
                 .Where(transition => transition.TransitionType == TransitionType.OnEntry).ToList();
             var hasEntryTransitions = onEntryTransitions.Count > 0;
 
-            var onExitTransitions = state.Transitions
-                .Where(transition => transition.TransitionType == TransitionType.OnExit).ToList();
-            var hasExitTransactions = onExitTransitions.Count > 0;
 
             var triggerTransitions = state.Transitions
                 .Where(transition => transition.TransitionType == TransitionType.OnTrigger).ToList();
@@ -132,23 +147,12 @@ public override bool AddPublicMethods()
 
             var hasAfterTransitions = _afterTransitionsBuilder.HasAfterTransitions(stateName);
 
+            var parameters = string.Join(", ", state.Parameters.Select(p => $"{p.Modifiers}{(string.IsNullOrEmpty(p.Modifiers) ? "" : " ")}{p.ParameterType} {p.Name}"));
             firstStateMethod = _document.WriteSeparatorLine(firstStateMethod);
-            _document.WriteLine($"{state.Modifiers} {state.ReturnType} {state.Name}()");
+            _document.WriteLine($"{state.Modifiers} async {state.ReturnType} {state.Name}({parameters})");
             _document.WriteLineBlockOpen();
 
-            var onExitCall = hasExitTransactions ? $"OnExit{state.Name}();" : null;
-
-            if (hasExitTransactions)
-            {
-                _document.WriteLine($"void OnExit{state.Name}()");
-                _document.WriteLineBlockOpen();
-                foreach (var transitionDeclaration in onExitTransitions)
-                {
-                    _document.WriteConditionAndAction(transitionDeclaration);
-                }
-                _document.WriteLineBlockClose();
-                _document.WriteLineNoTabs();
-            }
+            var onExitCall = CreateOnExitCall(state, null);
 
             if (hasEntryTransitions || hasTriggerTransactions || hasAfterTransitions)
             {
@@ -204,5 +208,61 @@ public override bool AddPublicMethods()
 
             _document.WriteLineBlockClose();
         }
+    }
+
+    private string? CreateOnExitCall(MethodDeclaration state, string? cancellationParameter)
+    {
+        var onExitTransitions = state.Transitions
+            .Where(transition => transition.TransitionType == TransitionType.OnExit).ToList();
+        var hasExitTransactions = onExitTransitions.Count > 0;
+
+        if (hasExitTransactions)
+        {
+            var onExitCall = "OnExit();";
+            using var methodDocument = new SourceWriter();
+            methodDocument.Indent = _document.Indent;
+
+            methodDocument.WriteLine("void OnExit()");
+            methodDocument.WriteLineBlockOpen();
+            foreach (var transitionDeclaration in onExitTransitions)
+            {
+                methodDocument.WriteConditionAndAction(transitionDeclaration);
+            }
+            methodDocument.WriteLineBlockClose();
+            methodDocument.WriteLineNoTabs();
+
+            var methodSource = methodDocument.ToString()!;
+            if(IsAsync(methodSource))
+            {
+                var parameter = cancellationParameter is not null ? $"{CommonTypeNames.CancellationToken} cancellationToken" : "";
+                {
+
+                }
+                methodSource = methodSource.Replace($"async {CommonTypeNames.Task} OnExitAsync({parameter})", "");
+                onExitCall = $"await OnExitAsync({cancellationParameter});";
+            }
+
+            _document.Write(methodSource);
+            return onExitCall;
+        }
+
+        return null;
+    }
+
+    /// <summary>
+    /// Test if the source code for a method contains any await expressions or await foreach statements, which would indicate that the method is asynchronous.
+    /// </summary>
+    /// <param name="code">The source code for the method.</param>
+    /// <returns><see langword="true"/> if the code contains an asynchronous method, or false otherwise.</returns>
+    public static bool IsAsync(string code)
+    {
+        if (SyntaxFactory.ParseMemberDeclaration(code) is not MethodDeclarationSyntax method || method.Body is null)
+        {
+            return false;
+        }
+        // Check if the body contains await expressions or await foreach statements
+        var descendantNodes = method.Body.DescendantNodes().ToList();
+        return descendantNodes.OfType<AwaitExpressionSyntax>().Any() 
+            || descendantNodes.OfType<ForEachStatementSyntax>().Any(f => f.AwaitKeyword != default && !f.AwaitKeyword.IsMissing);
     }
 }

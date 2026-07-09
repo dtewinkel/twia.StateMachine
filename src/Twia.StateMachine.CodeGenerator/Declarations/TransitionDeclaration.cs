@@ -1,6 +1,4 @@
-﻿using Generator.Equals;
-
-namespace Twia.StateMachine.CodeGenerator.Declarations;
+﻿namespace Twia.StateMachine.CodeGenerator.Declarations;
 
 [Equatable]
 public abstract partial record TransitionDeclaration

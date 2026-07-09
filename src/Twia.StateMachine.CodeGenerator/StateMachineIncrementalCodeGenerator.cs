@@ -1,6 +1,8 @@
 ﻿using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
+using Twia.StateMachine.CodeGenerator.Builders;
 using Twia.StateMachine.CodeGenerator.Declarations;
+using Twia.StateMachine.CodeGenerator.Validators;
 
 namespace Twia.StateMachine.CodeGenerator;
 
@@ -11,18 +13,26 @@ public class StateMachineIncrementalCodeGenerator: IIncrementalGenerator
     {
         var stateMachineLogicDeclaration = context.SyntaxProvider
                 .ForAttributeWithMetadataName(StateMachineAttributeNames.StateMachineAttributeName, SyntaxProviderPredicate, Transform);
+        var asyncStateMachineLogicDeclaration = context.SyntaxProvider
+            .ForAttributeWithMetadataName(StateMachineAttributeNames.AsyncStateMachineAttributeName, SyntaxProviderPredicate, Transform);
 
         context.RegisterSourceOutput(stateMachineLogicDeclaration, AddSource);
+        context.RegisterSourceOutput(asyncStateMachineLogicDeclaration, AddAsyncSource);
     }
 
     private static void AddSource(SourceProductionContext context, StateMachineDeclaration declaration)
     {
-        StateMachineValidator.IsDeclarationValid(context, declaration);
-
-        var sourceBuilder = new StateMachineSourceBuilder();
-        sourceBuilder.AddSource(context, declaration);
+        var validator = new StateMachineValidator();
+        validator.IsDeclarationValid(context, declaration);
+        StateMachineSourceBuilder.AddSource(context, declaration);
     }
 
+    private static void AddAsyncSource(SourceProductionContext context, StateMachineDeclaration declaration)
+    {
+        var validator = new AsyncStateMachineValidator();
+        validator.IsDeclarationValid(context, declaration);
+        AsyncStateMachineSourceBuilder.AddSource(context, declaration);
+    }
 
     private static bool SyntaxProviderPredicate(SyntaxNode syntaxNode, CancellationToken _)
         => syntaxNode is ClassDeclarationSyntax;

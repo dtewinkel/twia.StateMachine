@@ -1,11 +1,10 @@
-﻿using Generator.Equals;
-using Microsoft.CodeAnalysis;
+﻿using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 
 namespace Twia.StateMachine.CodeGenerator.Declarations;
 
-[Equatable(IgnoreInheritedMembers = true)]
+[Equatable]
 public partial record ClassDeclaration : Declaration
 {
     public ClassDeclaration(ClassDeclarationSyntax node) : base(node)

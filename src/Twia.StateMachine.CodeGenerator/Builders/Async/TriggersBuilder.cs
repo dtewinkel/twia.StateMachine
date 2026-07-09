@@ -1,8 +1,9 @@
 ﻿using System.CodeDom.Compiler;
 using Twia.StateMachine.CodeGenerator.Declarations;
 
-namespace Twia.StateMachine.CodeGenerator.Builders;
-internal class TriggersBuilder : BuilderBase, ITriggersProvider
+namespace Twia.StateMachine.CodeGenerator.Builders.Async;
+
+public class TriggersBuilder : BuilderBase, ITriggersProvider
 {
     private readonly IndentedTextWriter _document;
     private readonly StatesBuilder _statesBuilder;
@@ -14,7 +15,7 @@ internal class TriggersBuilder : BuilderBase, ITriggersProvider
         _document = document;
         _statesBuilder = statesBuilder;
 
-        _triggerMethods = declaration.Methods.Where(method => method.IsTrigger).ToArray();
+        _triggerMethods = [.. declaration.Methods.Where(method => method.IsTrigger)];
 
         UndefinedTrigger = classCommonBuilder.ToPrivateName("Undefined");
         TriggerEnumTypeName = classCommonBuilder.ToPrivateName("Trigger");
@@ -22,7 +23,7 @@ internal class TriggersBuilder : BuilderBase, ITriggersProvider
 
         EntryTriggerName = classCommonBuilder.ToPrivateName("Entry");
 
-        InvokeTriggerMethodName = classCommonBuilder.ToPrivateName("InvokeTrigger");
+        InvokeTriggerMethodName = classCommonBuilder.ToPrivateName("InvokeTriggerAsync");
     }
 
     public string UndefinedTrigger { get; }
@@ -56,11 +57,16 @@ internal class TriggersBuilder : BuilderBase, ITriggersProvider
         foreach (var trigger in _triggerMethods)
         {
             first = _document.WriteSeparatorLine(first);
-            _document.WriteLine($"{trigger.Modifiers} {trigger.ReturnType} {trigger.Name}()");
+
+            var parameters = string.Join(", ", trigger.Parameters.Select(p => $"{p.Modifiers ?? ""}{(string.IsNullOrEmpty(p.Modifiers) ? "" : " ")}{p.ParameterType} {p.Name}"));
+            var cancellationTokenParamName = trigger.CancellationTokenParameterName;
+            var withCancellationToken = cancellationTokenParamName != null ? $", {cancellationTokenParamName}" : "";
+
+            _document.WriteLine($"{trigger.Modifiers} async {trigger.ReturnType} {trigger.Name}({parameters})");
             _document.WriteLineBlockOpen();
             _document.WriteLine($"{_statesBuilder.AssertIsInitializedMethodName}();");
             _document.WriteLineNoTabs();
-            _document.WriteLine($"{InvokeTriggerMethodName}({TriggerEnumTypeName}.{trigger.Name});");
+            _document.WriteLine($"await {InvokeTriggerMethodName}({TriggerEnumTypeName}.{trigger.Name}{withCancellationToken});");
             _document.WriteLineBlockClose();
         }
     }

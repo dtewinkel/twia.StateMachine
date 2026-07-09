@@ -2,11 +2,11 @@
 using System.Reflection;
 using Twia.StateMachine.CodeGenerator.Declarations;
 
-namespace Twia.StateMachine.CodeGenerator.Builders;
+namespace Twia.StateMachine.CodeGenerator.Builders.Sync;
 
-internal class ClassCommonBuilder
+public class ClassCommonBuilder
 {
-    private static readonly string _randomIdInPrefix = Guid.NewGuid().ToString("N").Substring(0, 8);
+    private static readonly string _randomIdInPrefix = Guid.NewGuid().ToString("N")[..8];
 
     private readonly string _generatorVersion;
     private readonly string _generatorName;

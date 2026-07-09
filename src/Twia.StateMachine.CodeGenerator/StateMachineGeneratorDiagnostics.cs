@@ -114,6 +114,15 @@ public static class StateMachineGeneratorDiagnostics
         true,
         "All time span values must be valid.");
 
+    private static readonly DiagnosticDescriptor _methodMustHaveTaskReturnTypeDescriptor = new(
+        "SMG0013",
+        "Method must have a Task return type",
+        "The method '{0}' must have a Task return type",
+        "Generator",
+        DiagnosticSeverity.Error,
+        true,
+        "The generated method will not return any data, but is async, and therefor must have a Task return type.");
+
     public static Diagnostic ClassMustBePartialDiagnostics(ClassDeclarationSyntax declaration)
     {
         return Diagnostic.Create(_classMustBePartialDescriptor, declaration.Identifier.GetLocation(), declaration.Identifier.ToString());
@@ -152,6 +161,11 @@ public static class StateMachineGeneratorDiagnostics
     public static Diagnostic MethodMustHaveVoidReturnType(MethodDeclarationSyntax declarationMethodNode)
     {
         return Diagnostic.Create(_methodMustHaveVoidReturnTypeDescriptor, declarationMethodNode.Identifier.GetLocation(), declarationMethodNode.Identifier.ToString());
+    }
+
+    public static Diagnostic MethodMustHaveTaskReturnType(MethodDeclarationSyntax declarationMethodNode)
+    {
+        return Diagnostic.Create(_methodMustHaveTaskReturnTypeDescriptor, declarationMethodNode.Identifier.GetLocation(), declarationMethodNode.Identifier.ToString());
     }
 
     public static Diagnostic MethodMustHaveNoParameters(MethodDeclarationSyntax declarationMethodNode)

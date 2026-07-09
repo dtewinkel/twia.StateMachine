@@ -1,5 +1,4 @@
-﻿using Generator.Equals;
-using Microsoft.CodeAnalysis;
+﻿using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 
 namespace Twia.StateMachine.CodeGenerator.Declarations;
@@ -11,7 +10,9 @@ public sealed partial record StateMachineDeclaration : ClassDeclaration
     {
         var stateMachineAttribute = symbol
             .GetAttributes()
-            .Single(attribute => attribute.GetFullName() == StateMachineAttributeNames.StateMachineAttributeName);
+            .Single(attribute => 
+                attribute.GetFullName() == StateMachineAttributeNames.StateMachineAttributeName 
+                || attribute.GetFullName() == StateMachineAttributeNames.AsyncStateMachineAttributeName);
         StateAccessible = stateMachineAttribute.NamedArguments.FirstOrDefault(kv => kv.Key == "StateAccessible").Value.Value as bool? ?? true;
         Observable = stateMachineAttribute.NamedArguments.FirstOrDefault(kv => kv.Key == "Observable").Value.Value as bool? ?? false;
 
@@ -32,14 +33,16 @@ public sealed partial record StateMachineDeclaration : ClassDeclaration
             var methodNode = node.Members
                 .First(nodeMember => nodeMember is MethodDeclarationSyntax methodDeclaration
                                      && methodDeclaration.Identifier.ToString() == method.Name);
-            Methods.Add(new MethodDeclaration((MethodDeclarationSyntax)methodNode, attributes));
+            Methods.Add(new MethodDeclaration((MethodDeclarationSyntax)methodNode, method, attributes));
         }
     }
 
-    [OrderedEquality]
+    [SequenceEquality]
     public List<MethodDeclaration> Methods { get; } = [];
 
     public bool StateAccessible { get; }
 
     public bool Observable { get; }
+
+    public MethodDeclaration GetMethod(string name) => Methods.First(methodDeclaration => methodDeclaration.Name == name);
 }

@@ -1,6 +1,6 @@
 ﻿namespace Twia.StateMachine.CodeGenerator.Builders;
 
-internal interface ITriggersProvider
+public interface ITriggersProvider
 {
     bool IsEnabled { get; }
 

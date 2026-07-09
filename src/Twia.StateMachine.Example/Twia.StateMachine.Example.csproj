@@ -20,7 +20,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Twia.StateMachine\Twia.StateMachine.csproj" />
-    <ProjectReference Include="..\Twia.StateMachine.CodeGenerator\Twia.StateMachine.CodeGenerator.csproj" PrivateAssets="all" ReferenceOutputAssembly="false" OutputItemType="Analyzer" AdditionalProperties="TargetFramework=net8.0" />
+    <ProjectReference Include="..\Twia.StateMachine.CodeGenerator\Twia.StateMachine.CodeGenerator.csproj" PrivateAssets="all" ReferenceOutputAssembly="false" OutputItemType="Analyzer" />
   </ItemGroup>
 
 </Project>

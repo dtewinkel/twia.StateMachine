@@ -3,6 +3,7 @@
 internal static class StateMachineAttributeNames
 {
     public const string StateMachineAttributeName = "Twia.StateMachine.StateMachineAttribute";
+    public const string AsyncStateMachineAttributeName = "Twia.StateMachine.AsyncStateMachineAttribute";
     public const string StateAttributeName = "Twia.StateMachine.StateAttribute";
     public const string TriggerAttributeName = "Twia.StateMachine.TriggerAttribute";
     public const string InitialStateAttributeName = "Twia.StateMachine.InitialStateAttribute";

@@ -1,14 +1,15 @@
 ﻿using System.CodeDom.Compiler;
 using Twia.StateMachine.CodeGenerator.Declarations;
 
-namespace Twia.StateMachine.CodeGenerator.Builders;
-internal class AfterTransitionsBuilder : BuilderBase, ITriggersProvider
+namespace Twia.StateMachine.CodeGenerator.Builders.Async;
+
+public class AfterTransitionsBuilder : BuilderBase, ITriggersProvider
 {
     private readonly IndentedTextWriter _document;
     private readonly ClassCommonBuilder _classCommonBuilder;
     private readonly StatesBuilder _statesBuilder;
     private readonly TriggersBuilder _triggersBuilder;
-    private readonly Dictionary<string, List<TransitionDeclaration>> _transitions = new();
+    private readonly Dictionary<string, List<TransitionDeclaration>> _transitions = [];
     private readonly string _startTimerMethodName;
     private readonly string _timersBackingFieldName;
 
@@ -34,10 +35,9 @@ internal class AfterTransitionsBuilder : BuilderBase, ITriggersProvider
         _startTimerMethodName = _classCommonBuilder.ToPrivateName("StartTimer");
     }
 
-    public string[] GetTriggerNames() => _transitions.Values
+    public string[] GetTriggerNames() => [.. _transitions.Values
         .SelectMany(transitions => transitions
-            .Select(transition => ToFullAfterTriggerName(transition.Name)))
-        .ToArray();
+            .Select(transition => ToFullAfterTriggerName(transition.Name)))];
 
     public override bool IsEnabled => _transitions.Count > 0;
 

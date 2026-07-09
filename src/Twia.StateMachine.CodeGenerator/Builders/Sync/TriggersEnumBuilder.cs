@@ -1,7 +1,8 @@
 ﻿using System.CodeDom.Compiler;
 
-namespace Twia.StateMachine.CodeGenerator.Builders;
-internal class TriggersEnumBuilder : BuilderBase
+namespace Twia.StateMachine.CodeGenerator.Builders.Sync;
+
+public class TriggersEnumBuilder : BuilderBase
 {
     private readonly IndentedTextWriter _document;
     private readonly TriggersBuilder _triggersBuilder;

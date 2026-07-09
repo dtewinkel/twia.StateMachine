@@ -1,5 +1,4 @@
-﻿using Generator.Equals;
-using Microsoft.CodeAnalysis;
+﻿using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 
@@ -8,11 +7,11 @@ namespace Twia.StateMachine.CodeGenerator.Declarations;
 [Equatable]
 public sealed partial record MethodDeclaration : Declaration
 {
-    public MethodDeclaration(MethodDeclarationSyntax node, IList<AttributeData> attributes) : base(node)
+    public MethodDeclaration(MethodDeclarationSyntax node, IMethodSymbol method, IList<AttributeData> attributes) : base(node)
     {
         Name = node.Identifier.ToString();
         Modifiers = node.Modifiers.ToString();
-        ReturnType = node.ReturnType.ToString();
+        ReturnType = method.ReturnType.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
 
         IsPartial = node.Modifiers.Any(SyntaxKind.PartialKeyword);
         IsState = attributes.Any(attribute => attribute.GetFullName() == StateMachineAttributeNames.StateAttributeName 
@@ -46,7 +45,8 @@ public sealed partial record MethodDeclaration : Declaration
 
         foreach (var parameter in node.ParameterList.Parameters)
         {
-            Parameters.Add(parameter.ToString());
+            var parameterSymbol = method.Parameters.First(p => p.Name == parameter.Identifier.ToString());
+            Parameters.Add(new ParameterDeclaration(parameter, parameterSymbol));
         }
     }
 
@@ -64,9 +64,11 @@ public sealed partial record MethodDeclaration : Declaration
 
     public bool IsInitial { get; }
 
-    [OrderedEquality]
-    public List<string> Parameters { get; } = [];
+    [SequenceEquality]
+    public List<ParameterDeclaration> Parameters { get; } = [];
 
-    [OrderedEquality]
+    [SequenceEquality]
     public List<TransitionDeclaration> Transitions { get; } = [];
+
+    public string? CancellationTokenParameterName => Parameters.FirstOrDefault(p => p.IsCancellationToken)?.Name;
 }

@@ -5,3 +5,4 @@
 
 Rule ID | Category | Severity | Notes
 ---|---|---|---
+SMG0013 | Generator | Error |

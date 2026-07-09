@@ -1,9 +1,9 @@
 ﻿using System.CodeDom.Compiler;
 using Twia.StateMachine.CodeGenerator.Declarations;
 
-namespace Twia.StateMachine.CodeGenerator.Builders;
+namespace Twia.StateMachine.CodeGenerator.Builders.Sync;
 
-internal class StatesBuilder : BuilderBase
+public class StatesBuilder : BuilderBase
 {
     private readonly IndentedTextWriter _document;
     private readonly ClassCommonBuilder _classCommonBuilder;

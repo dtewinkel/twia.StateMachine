@@ -1,6 +1,6 @@
 ﻿namespace Twia.StateMachine.CodeGenerator.Builders;
 
-internal class BuilderBase
+public class BuilderBase
 {
     public virtual bool IsEnabled => true;
 
