@@ -18,7 +18,8 @@ public sealed class MethodReturnTypeDetectorTests
             ("public void M() { return System.Threading.Tasks.Task.CompletedTask; }", MethodReturnType.ReturnTask),
             ("public void M() => System.Threading.Tasks.Task.CompletedTask;", MethodReturnType.ReturnTask),
             ("public void M() { if (true) return; return 42; }", MethodReturnType.MixedReturn),
-            ("public void M() { await DoAsync(); }", MethodReturnType.ReturnTask),
+            ("public void M() { await DoAsync(); }", MethodReturnType.ReturnsAsyncTask),
+            ("public void M() { await DoAsync(); await DoAsync2(); }", MethodReturnType.ReturnsAsyncTask),
             ("public int M() { System.Func<int> nested = () => 42; return; }", MethodReturnType.ReturnsVoid)
         };
 

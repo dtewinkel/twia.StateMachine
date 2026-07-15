@@ -7,6 +7,7 @@ public enum MethodReturnType
 {
     ReturnsVoid,
     ReturnTask,
+    ReturnsAsyncTask,
     ReturnOther,
     MixedReturn
 }
@@ -156,7 +157,7 @@ public static class MethodReturnTypeDetector
             {
                 return _hasBareReturn && (_hasTaskReturn || _hasOtherReturn)
                     ? MethodReturnType.MixedReturn
-                    : MethodReturnType.ReturnTask;
+                    : MethodReturnType.ReturnsAsyncTask;
             }
 
             if (_hasBareReturn && (_hasTaskReturn || _hasOtherReturn))
