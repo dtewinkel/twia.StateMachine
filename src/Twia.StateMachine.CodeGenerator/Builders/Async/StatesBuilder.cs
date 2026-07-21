@@ -5,7 +5,7 @@ namespace Twia.StateMachine.CodeGenerator.Builders.Async;
 
 public class StatesBuilder : BuilderBase
 {
-    private readonly IndentedTextWriter _document;
+    private readonly CSharpDocumentWriter _document;
     private readonly ClassCommonBuilder _classCommonBuilder;
     private readonly bool _stateIsPublic;
     private readonly Dictionary<string, MethodDeclaration> _states;
@@ -13,7 +13,7 @@ public class StatesBuilder : BuilderBase
     private readonly bool _hasTriggers;
     private readonly bool _stateIsAccessible;
 
-    public StatesBuilder(IndentedTextWriter document, StateMachineDeclaration declaration, ClassCommonBuilder classCommonBuilder)
+    public StatesBuilder(CSharpDocumentWriter document, StateMachineDeclaration declaration, ClassCommonBuilder classCommonBuilder)
     {
         _document = document;
         _classCommonBuilder = classCommonBuilder;

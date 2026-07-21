@@ -41,8 +41,12 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Compile Remove="TestFiles/*.cs" />
-    <None Include="TestFiles/*.cs">
+    <Compile Remove="TestFiles\Async\*.cs" />
+    <Compile Remove="TestFiles\Sync\*.cs" />
+    <None Include="TestFiles\Async\*.cs">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="TestFiles\Sync\*.cs">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
   </ItemGroup>

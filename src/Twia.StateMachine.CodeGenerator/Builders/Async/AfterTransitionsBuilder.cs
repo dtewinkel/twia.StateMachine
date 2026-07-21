@@ -5,7 +5,7 @@ namespace Twia.StateMachine.CodeGenerator.Builders.Async;
 
 public class AfterTransitionsBuilder : BuilderBase, ITriggersProvider
 {
-    private readonly IndentedTextWriter _document;
+    private readonly CSharpDocumentWriter _document;
     private readonly ClassCommonBuilder _classCommonBuilder;
     private readonly StatesBuilder _statesBuilder;
     private readonly TriggersBuilder _triggersBuilder;
@@ -13,7 +13,7 @@ public class AfterTransitionsBuilder : BuilderBase, ITriggersProvider
     private readonly string _startTimerMethodName;
     private readonly string _timersBackingFieldName;
 
-    public AfterTransitionsBuilder(IndentedTextWriter document, StateMachineDeclaration declaration, ClassCommonBuilder classCommonBuilder, StatesBuilder statesBuilder, TriggersBuilder triggersBuilder)
+    public AfterTransitionsBuilder(CSharpDocumentWriter document, StateMachineDeclaration declaration, ClassCommonBuilder classCommonBuilder, StatesBuilder statesBuilder, TriggersBuilder triggersBuilder)
     {
         _document = document;
         _classCommonBuilder = classCommonBuilder;
@@ -85,39 +85,41 @@ public class AfterTransitionsBuilder : BuilderBase, ITriggersProvider
         }
     }
 
-    public void AddStartTimers(string stateName)
+    public void AddStartTimers(CSharpDocumentWriter document, string stateName)
     {
         if (_transitions.TryGetValue(stateName, out var transitions))
         {
             foreach (var transition in transitions)
             {
-                _document.WriteLine(
+                document.WriteLine(
                     $"{_startTimerMethodName}(\"{transition.Trigger}\", {_triggersBuilder.TriggerEnumTypeName}.{ToFullAfterTriggerName(transition.Name)});");
             }
         }
     }
 
-    public void AddTimerTransitions(string stateName, bool first, string? onExitCall)
+    public void AddTimerTransitions(CSharpDocumentWriter document, string stateName, bool first, string? onExitCall)
     {
-        if (_transitions.TryGetValue(stateName, out var transitions))
+        if (!_transitions.TryGetValue(stateName, out var transitions))
         {
-            foreach (var transition in transitions)
-            {
-                first = _document.WriteSeparatorLine(first);
-                _document.WriteLine(
-                    $"case {_triggersBuilder.TriggerEnumTypeName}.{ToFullAfterTriggerName(transition.Name)}:");
-                _document.Indent++;
-                _document.WriteConditionActionAndTransition(transition, onExitCall,
-                    (document, declaration) =>
-                    {
-                        document.WriteLine(
-                            $"{_statesBuilder.EnterStateMethodName}({_statesBuilder.StateFullTypeName}.{declaration.TargetState}, \"After: {declaration.Trigger}\");");
-                    }
-                );
+            return;
+        }
 
-                _document.WriteLine("break;");
-                _document.Indent--;
-            }
+        foreach (var transition in transitions)
+        {
+            first = document.WriteSeparatorLine(first);
+            document.WriteLine(
+                $"case {_triggersBuilder.TriggerEnumTypeName}.{ToFullAfterTriggerName(transition.Name)}:");
+            document.Indent++;
+            document.WriteConditionActionAndTransition(transition, onExitCall,
+                (doc, declaration) =>
+                {
+                    doc.WriteLine(
+                        $"{_statesBuilder.EnterStateMethodName}({_statesBuilder.StateFullTypeName}.{declaration.TargetState}, \"After: {declaration.Trigger}\");");
+                }
+            );
+
+            document.WriteLine("break;");
+            document.Indent--;
         }
     }
 

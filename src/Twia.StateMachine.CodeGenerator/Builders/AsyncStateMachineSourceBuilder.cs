@@ -2,7 +2,6 @@
 using Microsoft.CodeAnalysis.Text;
 using System.CodeDom.Compiler;
 using System.Diagnostics;
-using System.Globalization;
 using System.Text;
 using Twia.StateMachine.CodeGenerator.Builders.Async;
 using Twia.StateMachine.CodeGenerator.Declarations;
@@ -15,8 +14,7 @@ public static class AsyncStateMachineSourceBuilder
     {
         try
         {
-            using var writer = new StringWriter(new StringBuilder(10000), CultureInfo.InvariantCulture);
-            using var document = new IndentedTextWriter(writer);
+            using var document = new CSharpDocumentWriter();
 
             var classCommonBuilder = new ClassCommonBuilder(document, declaration);
             var statesBuilder = new StatesBuilder(document, declaration, classCommonBuilder);
@@ -57,7 +55,7 @@ public static class AsyncStateMachineSourceBuilder
             Debug.Assert(document.Indent == 0);
 
             var hintName = $"{declaration.HintNameForSource}_AsyncStateMachine.g.cs";
-            context.AddSource(hintName, SourceText.From(writer.ToString(), Encoding.UTF8));
+            context.AddSource(hintName, SourceText.From(document.ToString(), Encoding.UTF8));
         }
         catch (Exception e)
         {
@@ -66,7 +64,7 @@ public static class AsyncStateMachineSourceBuilder
         }
     }
 
-    private static bool GenerateAll(List<BuilderBase> builders, IndentedTextWriter document, bool codeAdded,
+    private static bool GenerateAll(List<BuilderBase> builders, CSharpDocumentWriter document, bool codeAdded,
         Func<BuilderBase, bool> builderAction)
     {
         foreach (var sourceBuilder in builders.Where(sourceBuilder => sourceBuilder.IsEnabled))

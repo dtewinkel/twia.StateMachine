@@ -23,7 +23,8 @@ internal partial class UnitTestEmptyAsyncStateMachine
     {
         __{{GeneratedId}}_Undefined = 0,
         ButtonPressed,
-        __{{GeneratedId}}_Entry
+        __{{GeneratedId}}_Entry,
+        __{{GeneratedId}}_OnAfter1
     }
 
     private const UnitTestEmptyAsyncStateMachine.State __{{GeneratedId}}_StateUndefined = (UnitTestEmptyAsyncStateMachine.State)0;
@@ -32,16 +33,18 @@ internal partial class UnitTestEmptyAsyncStateMachine
 
     private __{{GeneratedId}}_Trigger __{{GeneratedId}}_LastTrigger = __{{GeneratedId}}_Trigger.__{{GeneratedId}}_Undefined;
 
-    /// <summary>
-    /// Readonly property to get the current state the state machine is in.
-    /// </summary>
-    /// <value>
-    /// The current state of the state machine.
-    /// </value>
-    /// <exception cref="global::System.InvalidOperationException">
-    /// the state is not initialized yet
-    /// </exception>
-    public State CurrentState
+    private global::System.Collections.Generic.List<global::System.Threading.Timer> __{{GeneratedId}}_Timers = [];
+
+/// <summary>
+/// Readonly property to get the current state the state machine is in.
+/// </summary>
+/// <value>
+/// The current state of the state machine.
+/// </value>
+/// <exception cref="global::System.InvalidOperationException">
+/// the state is not initialized yet
+/// </exception>
+public State CurrentState
     {
         get
         {
@@ -110,10 +113,12 @@ internal partial class UnitTestEmptyAsyncStateMachine
 
     internal partial global::System.Threading.Tasks.Task Off(global::System.Threading.CancellationToken ct)
     {
+        return global::System.Threading.Tasks.Task.CompletedTask;
     }
 
     partial global::System.Threading.Tasks.Task On()
     {
+        return global::System.Threading.Tasks.Task.CompletedTask;
     }
 
 }

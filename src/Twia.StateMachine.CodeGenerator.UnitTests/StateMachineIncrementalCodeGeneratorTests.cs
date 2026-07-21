@@ -402,9 +402,7 @@ public sealed class StateMachineIncrementalCodeGeneratorTests
 
     public TestContext TestContext { get; set; }
 
-    [TestMethod(DisplayName = "GenerateCode")]
-    [DataRow("AsyncNoStateNoTriggers", DisplayName = "Async NoStateNoTriggers")]
-    [DataRow("AsyncWithAttributes", DisplayName = "Async WithAttributes")]
+    [TestMethod(DisplayName = "GenerateSyncCode")]
     [DataRow("WithAttributes", DisplayName = "WithAttributes")]
     [DataRow("WithFullAttributeNames", DisplayName = "WithFullAttributeNames")]
     [DataRow("NestedClass", DisplayName = "NestedClass")]
@@ -412,10 +410,25 @@ public sealed class StateMachineIncrementalCodeGeneratorTests
     [DataRow("OnlyStatesAndNoTriggers", DisplayName = "OnlyStatesAndNoTriggers")]
     [DataRow("WithConditionsAndActions", DisplayName = "WithConditionsAndActions")]
     [DataRow("Observable", DisplayName = "Observable")]
-    public async Task Generator_GeneratesCode(string testDataName)
+    public async Task Generator_GeneratesSyncCode(string testDataName)
     {
-        var code = await File.ReadAllTextAsync($"TestFiles/{testDataName}.cs", TestContext.CancellationToken);
-        var expectedCode = await File.ReadAllTextAsync($"TestFiles/{testDataName}.e.cs", TestContext.CancellationToken);
+        var code = await File.ReadAllTextAsync($"TestFiles/sync/{testDataName}.cs", TestContext.CancellationToken);
+        var expectedCode = await File.ReadAllTextAsync($"TestFiles/sync/{testDataName}.e.cs", TestContext.CancellationToken);
+#if SNAPSHOTS
+        _verifier.OutputFile = Path.Join(Path.GetTempPath(), $"{testDataName}.g.cs");
+#endif
+
+        await _verifier.VerifyGeneratorAsync([code], ("*UnitTestEmptyStateMachine*", expectedCode));
+    }
+
+    [TestMethod(DisplayName = "GenerateAsyncCode")]
+    [DataRow("AsyncNoStateNoTriggers", DisplayName = "Async NoStateNoTriggers")]
+    [DataRow("AsyncWithAttributes", DisplayName = "Async WithAttributes")]
+    [DataRow("AsyncWithEntryAndExit", DisplayName = "Async WithEntryAndExit")]
+    public async Task Generator_GeneratesAsyncCode(string testDataName)
+    {
+        var code = await File.ReadAllTextAsync($"TestFiles/async/{testDataName}.cs", TestContext.CancellationToken);
+        var expectedCode = await File.ReadAllTextAsync($"TestFiles/async/{testDataName}.e.cs", TestContext.CancellationToken);
 #if SNAPSHOTS
         _verifier.OutputFile = Path.Join(Path.GetTempPath(), $"{testDataName}.g.cs");
 #endif

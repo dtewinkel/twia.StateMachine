@@ -5,13 +5,13 @@ namespace Twia.StateMachine.CodeGenerator.Builders.Sync;
 
 public class StatesManagementBuilder : BuilderBase
 {
-    private readonly IndentedTextWriter _document;
+    private readonly CSharpDocumentWriter _document;
     private readonly StatesBuilder _statesBuilder;
     private readonly TriggersBuilder _triggersBuilder;
     private readonly AfterTransitionsBuilder _afterTransitionsBuilder;
     private readonly ObservableBuilder _observableBuilder;
 
-    public StatesManagementBuilder(IndentedTextWriter document,
+    public StatesManagementBuilder(CSharpDocumentWriter document,
         StatesBuilder statesBuilder, TriggersBuilder triggersBuilder,
         AfterTransitionsBuilder afterTransitionsBuilder, ObservableBuilder observableBuilder)
     {

@@ -5,13 +5,13 @@ namespace Twia.StateMachine.CodeGenerator.Builders.Sync;
 
 public class ObservableBuilder : BuilderBase
 {
-    private readonly IndentedTextWriter _document;
+    private readonly CSharpDocumentWriter _document;
     private readonly StateMachineDeclaration _declaration;
     private readonly StatesBuilder _statesBuilder;
     private readonly string _stateChangedMethodName;
 
 
-    public ObservableBuilder(IndentedTextWriter document, StateMachineDeclaration declaration, ClassCommonBuilder classCommonBuilder, StatesBuilder statesBuilder)
+    public ObservableBuilder(CSharpDocumentWriter document, StateMachineDeclaration declaration, ClassCommonBuilder classCommonBuilder, StatesBuilder statesBuilder)
     {
         _document = document;
         _declaration = declaration;

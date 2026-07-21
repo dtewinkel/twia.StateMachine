@@ -1,21 +1,17 @@
-﻿using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.CSharp;
-using Microsoft.CodeAnalysis.CSharp.Syntax;
-using System.CodeDom.Compiler;
-using System.Xml.Linq;
+﻿using System.Security.Cryptography.X509Certificates;
 using Twia.StateMachine.CodeGenerator.Declarations;
 
 namespace Twia.StateMachine.CodeGenerator.Builders.Async;
 
 public class StatesManagementBuilder : BuilderBase
 {
-    private readonly IndentedTextWriter _document;
+    private readonly CSharpDocumentWriter _document;
     private readonly StatesBuilder _statesBuilder;
     private readonly TriggersBuilder _triggersBuilder;
     private readonly AfterTransitionsBuilder _afterTransitionsBuilder;
     private readonly ObservableBuilder _observableBuilder;
 
-    public StatesManagementBuilder(IndentedTextWriter document,
+    public StatesManagementBuilder(CSharpDocumentWriter document,
         StatesBuilder statesBuilder, TriggersBuilder triggersBuilder,
         AfterTransitionsBuilder afterTransitionsBuilder, ObservableBuilder observableBuilder)
     {
@@ -28,7 +24,7 @@ public class StatesManagementBuilder : BuilderBase
 
     public override bool IsEnabled => _statesBuilder.IsEnabled || _triggersBuilder.IsEnabled;
 
-public override bool AddPublicMethods()
+    public override bool AddPublicMethods()
     {
         AddInitializeMethod();
         return true;
@@ -134,12 +130,14 @@ public override bool AddPublicMethods()
         var firstStateMethod = true;
         foreach (var stateName in _statesBuilder.StateNames)
         {
+            firstStateMethod = _document.WriteSeparatorLine(firstStateMethod);
+
+            using var methodBody = new CSharpDocumentWriter(1000);
             var state = _statesBuilder.GetState(stateName);
 
             var onEntryTransitions = state.Transitions
                 .Where(transition => transition.TransitionType == TransitionType.OnEntry).ToList();
             var hasEntryTransitions = onEntryTransitions.Count > 0;
-
 
             var triggerTransitions = state.Transitions
                 .Where(transition => transition.TransitionType == TransitionType.OnTrigger).ToList();
@@ -147,33 +145,30 @@ public override bool AddPublicMethods()
 
             var hasAfterTransitions = _afterTransitionsBuilder.HasAfterTransitions(stateName);
 
-            var parameters = string.Join(", ", state.Parameters.Select(p => $"{p.Modifiers}{(string.IsNullOrEmpty(p.Modifiers) ? "" : " ")}{p.ParameterType} {p.Name}"));
-            firstStateMethod = _document.WriteSeparatorLine(firstStateMethod);
-            _document.WriteLine($"{state.Modifiers} async {state.ReturnType} {state.Name}({parameters})");
-            _document.WriteLineBlockOpen();
-
-            var onExitCall = CreateOnExitCall(state, null);
+            var onExitCall = CreateOnExitCall(methodBody, state, null);
 
             if (hasEntryTransitions || hasTriggerTransactions || hasAfterTransitions)
             {
-                _document.WriteLine($"switch ({_triggersBuilder.LastTriggerFieldName})");
-                _document.WriteLineBlockOpen();
+                methodBody.WriteLine($"switch ({_triggersBuilder.LastTriggerFieldName})");
+                methodBody.WriteLineBlockOpen();
                 var first = true;
 
                 if (hasEntryTransitions || hasAfterTransitions)
                 {
-                    first = _document.WriteSeparatorLine(first);
+                    first = methodBody.WriteSeparatorLine(first);
 
-                    _document.WriteLine($"case {_triggersBuilder.TriggerEnumTypeName}.{_triggersBuilder.EntryTriggerName}:");
-                    _document.Indent++;
+                    methodBody.WriteLine(
+                        $"case {_triggersBuilder.TriggerEnumTypeName}.{_triggersBuilder.EntryTriggerName}:");
+                    methodBody.Indent++;
 
-                    _afterTransitionsBuilder.AddStartTimers(stateName);
+                    _afterTransitionsBuilder.AddStartTimers(methodBody, stateName);
                     foreach (var transitionDeclaration in onEntryTransitions)
                     {
-                        _document.WriteConditionAndAction(transitionDeclaration);
+                        methodBody.WriteConditionAndAction(transitionDeclaration);
                     }
-                    _document.WriteLine("break;");
-                    _document.Indent--;
+
+                    methodBody.WriteLine("break;");
+                    methodBody.Indent--;
                 }
 
                 if (hasTriggerTransactions)
@@ -181,36 +176,47 @@ public override bool AddPublicMethods()
                     var triggersGrouped = triggerTransitions.GroupBy(trigger => trigger.Trigger);
                     foreach (var trigger in triggersGrouped)
                     {
-                        first = _document.WriteSeparatorLine(first);
-                        _document.WriteLine($"case {_triggersBuilder.TriggerEnumTypeName}.{trigger.Key}:");
-                        _document.Indent++;
+                        first = methodBody.WriteSeparatorLine(first);
+                        methodBody.WriteLine($"case {_triggersBuilder.TriggerEnumTypeName}.{trigger.Key}:");
+                        methodBody.Indent++;
                         foreach (var transition in trigger.ToList())
                         {
-                            _document.WriteConditionActionAndTransition(transition, onExitCall,
+                            methodBody.WriteConditionActionAndTransition(transition, onExitCall,
                                 (document, declaration) =>
                                 {
                                     document.WriteLine($"{_statesBuilder.EnterStateMethodName}({_statesBuilder.StateFullTypeName}.{declaration.TargetState}, \"Trigger: {trigger.Key}\");");
                                 }
                             );
                         }
-                        _document.WriteLine("break;");
-                        _document.Indent--;
+
+                        methodBody.WriteLine("break;");
+                        methodBody.Indent--;
                     }
                 }
 
                 if (hasAfterTransitions)
                 {
-                    _afterTransitionsBuilder.AddTimerTransitions(stateName, first, onExitCall);
+                    _afterTransitionsBuilder.AddTimerTransitions(methodBody, stateName, first, onExitCall);
                 }
-
-                _document.WriteLineBlockClose();
+                methodBody.WriteLineBlockClose();
             }
 
-            _document.WriteLineBlockClose();
+            var parameters = string.Join(", ",
+                state.Parameters.Select(p =>
+                    $"{p.Modifiers}{(string.IsNullOrEmpty(p.Modifiers) ? "" : " ")}{p.ParameterType} {p.Name}"));
+
+            var methodReturnType = methodBody.GetMethodReturnType();
+            //var methodDeclarationAuto = ClassCommonBuilder.ToMethodDeclaration(methodReturnType, state.Name, parameters, false);
+            //methodBody.WriteLine($"// {state.Modifiers} {methodDeclarationAuto};");
+
+            //var returnType = methodBody.GetMethodReturnType();
+            // var methodDeclaration = $"{state.Modifiers} {ClassCommonBuilder.ToMethodDeclaration(returnType, state.Name, parameters, false)}";
+            var methodDeclaration = $"{state.Modifiers} async {state.ReturnType} {state.Name}({parameters})";
+            _document.WriteMethod(methodDeclaration, methodBody);
         }
     }
 
-    private string? CreateOnExitCall(MethodDeclaration state, string? cancellationParameter)
+    private string? CreateOnExitCall(CSharpDocumentWriter document, MethodDeclaration state, string? cancellationParameter)
     {
         var onExitTransitions = state.Transitions
             .Where(transition => transition.TransitionType == TransitionType.OnExit).ToList();
@@ -218,51 +224,23 @@ public override bool AddPublicMethods()
 
         if (hasExitTransactions)
         {
-            var onExitCall = "OnExit();";
-            using var methodDocument = new SourceWriter();
-            methodDocument.Indent = _document.Indent;
+            using var methodBodyDocument = new CSharpDocumentWriter(1000);
 
-            methodDocument.WriteLine("void OnExit()");
-            methodDocument.WriteLineBlockOpen();
             foreach (var transitionDeclaration in onExitTransitions)
             {
-                methodDocument.WriteConditionAndAction(transitionDeclaration);
-            }
-            methodDocument.WriteLineBlockClose();
-            methodDocument.WriteLineNoTabs();
-
-            var methodSource = methodDocument.ToString()!;
-            if(IsAsync(methodSource))
-            {
-                var parameter = cancellationParameter is not null ? $"{CommonTypeNames.CancellationToken} cancellationToken" : "";
-                {
-
-                }
-                methodSource = methodSource.Replace($"async {CommonTypeNames.Task} OnExitAsync({parameter})", "");
-                onExitCall = $"await OnExitAsync({cancellationParameter});";
+                methodBodyDocument.WriteConditionAndAction(transitionDeclaration);
             }
 
-            _document.Write(methodSource);
-            return onExitCall;
+            var onExitCancellationParameter = cancellationParameter is not null ? "cancellationToken" : null;
+
+            var methodReturnType = methodBodyDocument.GetMethodReturnType();
+            var methodDeclaration = ClassCommonBuilder.ToMethodDeclaration(methodReturnType, "OnExit", onExitCancellationParameter);
+            document.WriteMethod(methodDeclaration, methodBodyDocument);
+            document.WriteLineNoTabs();
+
+            return ClassCommonBuilder.ToMethodCall(methodReturnType, "OnExit", cancellationParameter);
         }
 
         return null;
-    }
-
-    /// <summary>
-    /// Test if the source code for a method contains any await expressions or await foreach statements, which would indicate that the method is asynchronous.
-    /// </summary>
-    /// <param name="code">The source code for the method.</param>
-    /// <returns><see langword="true"/> if the code contains an asynchronous method, or false otherwise.</returns>
-    public static bool IsAsync(string code)
-    {
-        if (SyntaxFactory.ParseMemberDeclaration(code) is not MethodDeclarationSyntax method || method.Body is null)
-        {
-            return false;
-        }
-        // Check if the body contains await expressions or await foreach statements
-        var descendantNodes = method.Body.DescendantNodes().ToList();
-        return descendantNodes.OfType<AwaitExpressionSyntax>().Any() 
-            || descendantNodes.OfType<ForEachStatementSyntax>().Any(f => f.AwaitKeyword != default && !f.AwaitKeyword.IsMissing);
     }
 }

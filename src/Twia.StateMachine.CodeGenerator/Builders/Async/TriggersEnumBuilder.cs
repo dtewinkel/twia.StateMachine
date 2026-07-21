@@ -4,11 +4,11 @@ namespace Twia.StateMachine.CodeGenerator.Builders.Async;
 
 public class TriggersEnumBuilder : BuilderBase
 {
-    private readonly IndentedTextWriter _document;
+    private readonly CSharpDocumentWriter _document;
     private readonly TriggersBuilder _triggersBuilder;
     private readonly List<string> _triggers;
 
-    public TriggersEnumBuilder(IndentedTextWriter document, TriggersBuilder triggersBuilder, List<ITriggersProvider> triggersProviders)
+    public TriggersEnumBuilder(CSharpDocumentWriter document, TriggersBuilder triggersBuilder, List<ITriggersProvider> triggersProviders)
     {
         _document = document;
         _triggersBuilder = triggersBuilder;

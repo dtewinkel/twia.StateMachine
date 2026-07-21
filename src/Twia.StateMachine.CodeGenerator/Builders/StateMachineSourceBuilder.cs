@@ -9,22 +9,13 @@ using Twia.StateMachine.CodeGenerator.Declarations;
 
 namespace Twia.StateMachine.CodeGenerator.Builders;
 
-public class SourceWriter : IndentedTextWriter
-{
-    /// <inheritdoc />
-    public SourceWriter() : base(new StringWriter(new StringBuilder(30000), CultureInfo.InvariantCulture))
-    {
-    }
-}
-
-
 public static class StateMachineSourceBuilder
 {
     public static void AddSource(SourceProductionContext context, StateMachineDeclaration declaration)
     {
         try
         {
-            using var document = new SourceWriter();
+            using var document = new CSharpDocumentWriter();
 
             var classCommonBuilder = new ClassCommonBuilder(document, declaration);
             var statesBuilder = new StatesBuilder(document, declaration, classCommonBuilder);
@@ -70,7 +61,7 @@ public static class StateMachineSourceBuilder
         }
     }
 
-    private static bool GenerateAll(List<BuilderBase> builders, IndentedTextWriter document, bool codeAdded, Func<BuilderBase, bool> builderAction)
+    private static bool GenerateAll(List<BuilderBase> builders, CSharpDocumentWriter document, bool codeAdded, Func<BuilderBase, bool> builderAction)
     {
         foreach (var sourceBuilder in builders.Where(sourceBuilder => sourceBuilder.IsEnabled))
         {

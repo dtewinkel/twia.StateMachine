@@ -13,7 +13,7 @@ public class ClassCommonBuilder
 
     private int _nestingLevel = 0;
 
-    private readonly IndentedTextWriter _document;
+    private readonly CSharpDocumentWriter _document;
     private readonly StateMachineDeclaration _declaration;
 
     private readonly string _privatePrefix;
@@ -22,7 +22,7 @@ public class ClassCommonBuilder
 
     public string FullStateMachineTypeName { get; private set; } = "";
 
-    public ClassCommonBuilder(IndentedTextWriter document, StateMachineDeclaration declaration)
+    public ClassCommonBuilder(CSharpDocumentWriter document, StateMachineDeclaration declaration)
     {
         _document = document;
         _declaration = declaration;
@@ -105,5 +105,47 @@ public class ClassCommonBuilder
             _document.WriteLineBlockClose();
             _nestingLevel--;
         }
+    }
+
+    public static string ToMethodDeclaration(MethodReturnType returnType, string methodName, string? cancellationTokenName, bool addAsyncIfAsync = true)
+    {
+        var isAsync = returnType == MethodReturnType.AsyncTask;
+        var returnTypeType = returnType switch
+        {
+            MethodReturnType.AsyncTask => CommonTypeNames.Task,
+            MethodReturnType.Task => CommonTypeNames.Task,
+            MethodReturnType.Void => CommonTypeNames.Void,
+            MethodReturnType.Other => throw new InvalidOperationException($"Return type {returnType} is not supported."),
+            MethodReturnType.Mixed => throw new InvalidOperationException($"Return type {returnType} is not supported."),
+            _ => throw new ArgumentOutOfRangeException(nameof(returnType), returnType, null)
+        };
+        var asyncPrefix = string.Empty;
+        var methodNamePostfix = string.Empty;
+        var cancellationParameter = string.Empty;
+        if (isAsync || returnTypeType == CommonTypeNames.Task)
+        {
+            asyncPrefix = "async ";
+            if (addAsyncIfAsync)
+            {
+                methodNamePostfix = "Async";
+            }
+
+            cancellationParameter = $"{CommonTypeNames.CancellationToken} cancellationToken = default";
+        }
+
+        return $"{asyncPrefix}{returnTypeType} {methodName}{methodNamePostfix}({cancellationParameter})";
+    }
+
+    public static string ToMethodCall(MethodReturnType returnType, string methodName, string? parameters)
+    {
+        var asyncPrefix = string.Empty;
+        var methodNamePostfix = string.Empty;
+        if (returnType is MethodReturnType.Task or MethodReturnType.AsyncTask)
+        {
+            asyncPrefix = "await ";
+            methodNamePostfix = "Async";
+        }
+
+        return $"{asyncPrefix}{methodName}{methodNamePostfix}({parameters ?? ""});";
     }
 }

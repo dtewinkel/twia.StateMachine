@@ -13,7 +13,7 @@ public class ClassCommonBuilder
 
     private int _nestingLevel = 0;
 
-    private readonly IndentedTextWriter _document;
+    private readonly CSharpDocumentWriter _document;
     private readonly StateMachineDeclaration _declaration;
 
     private readonly string _privatePrefix;
@@ -23,7 +23,7 @@ public class ClassCommonBuilder
 
     public string FullStateMachineTypeName { get; private set; } = "";
 
-    public ClassCommonBuilder(IndentedTextWriter document, StateMachineDeclaration declaration)
+    public ClassCommonBuilder(CSharpDocumentWriter document, StateMachineDeclaration declaration)
     {
         _document = document;
         _declaration = declaration;

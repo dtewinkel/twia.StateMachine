@@ -5,7 +5,7 @@ namespace Twia.StateMachine.CodeGenerator.Builders.Sync;
 
 public class AfterTransitionsBuilder : BuilderBase, ITriggersProvider
 {
-    private readonly IndentedTextWriter _document;
+    private readonly CSharpDocumentWriter _document;
     private readonly ClassCommonBuilder _classCommonBuilder;
     private readonly StatesBuilder _statesBuilder;
     private readonly TriggersBuilder _triggersBuilder;
@@ -13,7 +13,7 @@ public class AfterTransitionsBuilder : BuilderBase, ITriggersProvider
     private readonly string _startTimerMethodName;
     private readonly string _timersBackingFieldName;
 
-    public AfterTransitionsBuilder(IndentedTextWriter document, StateMachineDeclaration declaration, ClassCommonBuilder classCommonBuilder, StatesBuilder statesBuilder, TriggersBuilder triggersBuilder)
+    public AfterTransitionsBuilder(CSharpDocumentWriter document, StateMachineDeclaration declaration, ClassCommonBuilder classCommonBuilder, StatesBuilder statesBuilder, TriggersBuilder triggersBuilder)
     {
         _document = document;
         _classCommonBuilder = classCommonBuilder;
