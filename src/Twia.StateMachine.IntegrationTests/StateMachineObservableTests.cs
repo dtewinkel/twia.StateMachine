@@ -1,4 +1,9 @@
-﻿using AwesomeAssertions;
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading;
+using AwesomeAssertions;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace Twia.StateMachine.IntegrationTests;
 

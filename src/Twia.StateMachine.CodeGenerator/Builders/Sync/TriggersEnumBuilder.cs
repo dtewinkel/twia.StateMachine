@@ -1,13 +1,14 @@
 ﻿using System.CodeDom.Compiler;
 
-namespace Twia.StateMachine.CodeGenerator.Builders;
-internal class TriggersEnumBuilder : BuilderBase
+namespace Twia.StateMachine.CodeGenerator.Builders.Sync;
+
+public class TriggersEnumBuilder : BuilderBase
 {
-    private readonly IndentedTextWriter _document;
+    private readonly CSharpDocumentWriter _document;
     private readonly TriggersBuilder _triggersBuilder;
     private readonly List<string> _triggers;
 
-    public TriggersEnumBuilder(IndentedTextWriter document, TriggersBuilder triggersBuilder, List<ITriggersProvider> triggersProviders)
+    public TriggersEnumBuilder(CSharpDocumentWriter document, TriggersBuilder triggersBuilder, List<ITriggersProvider> triggersProviders)
     {
         _document = document;
         _triggersBuilder = triggersBuilder;

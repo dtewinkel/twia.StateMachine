@@ -2,11 +2,11 @@
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Twia.StateMachine.CodeGenerator.Declarations;
 
-namespace Twia.StateMachine.CodeGenerator;
+namespace Twia.StateMachine.CodeGenerator.Validators;
 
-public static class StateMachineValidator
+public class BaseValidator
 {
-    public static bool IsDeclarationValid(SourceProductionContext context, StateMachineDeclaration declaration)
+    public virtual bool IsDeclarationValid(SourceProductionContext context, StateMachineDeclaration declaration)
     {
         var declarationIsPartial = DeclarationIsPartial(context, declaration);
         if (declaration.Methods.Count == 0)
@@ -29,7 +29,7 @@ public static class StateMachineValidator
                && stateNamesAreCorrectNamesAreCorrect;
     }
 
-    private static bool StateNamesAreCorrect(SourceProductionContext context, StateMachineDeclaration declaration)
+    protected virtual bool StateNamesAreCorrect(SourceProductionContext context, StateMachineDeclaration declaration)
     {
         var states = declaration.Methods.Where(method => method.IsState).ToList();
         var stateNames = states.Select(method => method.Name).ToArray();
@@ -53,7 +53,7 @@ public static class StateMachineValidator
         return success;
     }
 
-    private static bool TriggerNamesAreCorrect(SourceProductionContext context, StateMachineDeclaration declaration)
+    protected virtual bool TriggerNamesAreCorrect(SourceProductionContext context, StateMachineDeclaration declaration)
     {
         var triggerNames = declaration.Methods
             .Where(method => method.IsTrigger)
@@ -81,7 +81,7 @@ public static class StateMachineValidator
         return success;
     }
 
-    private static bool AfterTimeSpansAreCorrect(SourceProductionContext context, StateMachineDeclaration declaration)
+    protected virtual bool AfterTimeSpansAreCorrect(SourceProductionContext context, StateMachineDeclaration declaration)
     {
         var states = declaration.Methods.Where(method => method.IsState);
         var success = true;
@@ -92,6 +92,7 @@ public static class StateMachineValidator
             foreach (var transitionDeclaration in transitions)
             {
                 var trigger = transitionDeclaration.Trigger;
+
                 
                 if (!TimeSpan.TryParse(trigger, out _))
                 {
@@ -104,7 +105,7 @@ public static class StateMachineValidator
         return success;
     }
 
-    private static bool DeclarationIsPartial(SourceProductionContext context, StateMachineDeclaration declaration)
+    protected virtual bool DeclarationIsPartial(SourceProductionContext context, StateMachineDeclaration declaration)
     {
         if (!declaration.IsPartial)
         {
@@ -115,7 +116,7 @@ public static class StateMachineValidator
         return true;
     }
 
-    private static bool MethodsAreStateOrTrigger(SourceProductionContext context, StateMachineDeclaration declaration)
+    protected virtual bool MethodsAreStateOrTrigger(SourceProductionContext context, StateMachineDeclaration declaration)
     {
         var success = true;
         foreach (var declarationMethod in declaration.Methods)
@@ -139,31 +140,22 @@ public static class StateMachineValidator
         return success;
     }
 
-    private static bool MethodsSignaturesAreCorrect(SourceProductionContext context, StateMachineDeclaration declaration)
+    protected virtual bool MethodsSignaturesAreCorrect(SourceProductionContext context, StateMachineDeclaration declaration)
     {
         var success = true;
         foreach (var declarationMethod in declaration.Methods)
-        { 
-            if (declarationMethod is { IsPartial: false })
+        {
+            if (declarationMethod is not { IsPartial: false })
             {
-                context.ReportDiagnostic(StateMachineGeneratorDiagnostics.MethodMustBePartial((MethodDeclarationSyntax)declarationMethod.Node));
-                success = false;
+                continue;
             }
-            if (declarationMethod.ReturnType is not "void")
-            {
-                context.ReportDiagnostic(StateMachineGeneratorDiagnostics.MethodMustHaveVoidReturnType((MethodDeclarationSyntax)declarationMethod.Node));
-                success = false;
-            }
-            if (declarationMethod.Parameters.Count > 0)
-            {
-                context.ReportDiagnostic(StateMachineGeneratorDiagnostics.MethodMustHaveNoParameters((MethodDeclarationSyntax)declarationMethod.Node));
-                success = false;
-            }
+            context.ReportDiagnostic(StateMachineGeneratorDiagnostics.MethodMustBePartial((MethodDeclarationSyntax)declarationMethod.Node));
+            success = false;
         }
         return success;
     }
 
-    private static bool InitialStateIsValid(SourceProductionContext context, StateMachineDeclaration declaration)
+    protected virtual bool InitialStateIsValid(SourceProductionContext context, StateMachineDeclaration declaration)
     {
         var initialStates = declaration.Methods.Where(method => method.IsInitial).ToArray();
         switch (initialStates.Length)

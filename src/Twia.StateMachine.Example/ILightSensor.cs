@@ -2,5 +2,5 @@
 
 public interface ILightSensor
 {
-    Decimal SensorValue { get; }
+    decimal SensorValue { get; }
 }

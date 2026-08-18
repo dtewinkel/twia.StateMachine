@@ -1,20 +1,21 @@
 ﻿using System.CodeDom.Compiler;
 using Twia.StateMachine.CodeGenerator.Declarations;
 
-namespace Twia.StateMachine.CodeGenerator.Builders;
-internal class TriggersBuilder : BuilderBase, ITriggersProvider
+namespace Twia.StateMachine.CodeGenerator.Builders.Sync;
+
+public class TriggersBuilder : BuilderBase, ITriggersProvider
 {
-    private readonly IndentedTextWriter _document;
+    private readonly CSharpDocumentWriter _document;
     private readonly StatesBuilder _statesBuilder;
 
     private readonly MethodDeclaration[] _triggerMethods;
 
-    public TriggersBuilder(IndentedTextWriter document, StateMachineDeclaration declaration, ClassCommonBuilder classCommonBuilder, StatesBuilder statesBuilder)
+    public TriggersBuilder(CSharpDocumentWriter document, StateMachineDeclaration declaration, ClassCommonBuilder classCommonBuilder, StatesBuilder statesBuilder)
     {
         _document = document;
         _statesBuilder = statesBuilder;
 
-        _triggerMethods = declaration.Methods.Where(method => method.IsTrigger).ToArray();
+        _triggerMethods = [.. declaration.Methods.Where(method => method.IsTrigger)];
 
         UndefinedTrigger = classCommonBuilder.ToPrivateName("Undefined");
         TriggerEnumTypeName = classCommonBuilder.ToPrivateName("Trigger");

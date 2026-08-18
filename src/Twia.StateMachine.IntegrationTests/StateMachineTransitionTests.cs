@@ -1,4 +1,8 @@
-﻿using AwesomeAssertions;
+﻿using System;
+using System.Collections.Generic;
+using System.Threading;
+using AwesomeAssertions;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace Twia.StateMachine.IntegrationTests;
 
@@ -16,9 +20,11 @@ public partial class StateMachineTransitionTests
         public int StopWithDelayCount { get; private set; }
         public int AfterCount { get; private set; }
         public int StoppedEntryCount { get; private set; }
+        public int StartingEntryCount { get; private set; }
         public int RunningEntryCount { get; private set; }
         public int StoppingWithDelayEntryCount { get; private set; }
         public int StoppedExitCount { get; private set; }
+        public int StartingExitCount { get; private set; }
         public int RunningExitCount { get; private set; }
         public int StoppingWithDelayExitCount { get; private set; }
 
@@ -80,6 +86,33 @@ public partial class StateMachineTransitionTests
             }
         }
 
+        public void OnEntryStartingAction()
+        {
+            StartingEntryCount++;
+            States.Add("Starting");
+            Transitions.Add("StartingEntry");
+        }
+
+        public void OnExitStartingAction()
+        {
+            StartingExitCount++;
+            Transitions.Add("StartingExit");
+        }
+
+        public void TriggerlessOnStartingAction()
+        {
+            StartCount++;
+            Transitions.Add("StartingAction");
+        }
+
+        public bool TriggerlessOnStartingCondition
+        {
+            get
+            {
+                Transitions.Add($"Condition TriggerlessOnStarting={CanStart}");
+                return CanStart;
+            }
+        }
     }
 
     [TestMethod]
@@ -183,7 +216,7 @@ public partial class StateMachineTransitionTests
     }
 
 
-    [TestMethod]
+     [TestMethod]
     public void StopWithDelay_InRunningState_TransitionsToStoppingAndAfterDelayToStoppedState()
     {
         var stateMachine = new TestStateMachine();

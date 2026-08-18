@@ -33,7 +33,7 @@ internal partial class UnitTestEmptyStateMachine
     private __{{GeneratedId}}_Trigger __{{GeneratedId}}_LastTrigger = __{{GeneratedId}}_Trigger.__{{GeneratedId}}_Undefined;
 
     /// <inheritdoc />
-    public event EventHandler<StateChangedEventArgs<UnitTestEmptyStateMachine.State>>? OnStateChanged;
+    public event global::System.EventHandler<global::Twia.StateMachine.StateChangedEventArgs<UnitTestEmptyStateMachine.State>>? OnStateChanged;
 
     /// <summary>
     /// Initialize the state machine before it is used.

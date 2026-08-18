@@ -1,4 +1,7 @@
-﻿using Microsoft.CodeAnalysis.Testing;
+﻿using System.IO;
+using System.Threading.Tasks;
+using Microsoft.CodeAnalysis.Testing;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Twia.StateMachine.CodeGenerator.UnitTests.Verifiers;
 
 namespace Twia.StateMachine.CodeGenerator.UnitTests;
@@ -399,7 +402,7 @@ public sealed class StateMachineIncrementalCodeGeneratorTests
 
     public TestContext TestContext { get; set; }
 
-    [TestMethod(DisplayName = "GenerateCode")]
+    [TestMethod(DisplayName = "GenerateSyncCode")]
     [DataRow("WithAttributes", DisplayName = "WithAttributes")]
     [DataRow("WithFullAttributeNames", DisplayName = "WithFullAttributeNames")]
     [DataRow("NestedClass", DisplayName = "NestedClass")]
@@ -407,10 +410,10 @@ public sealed class StateMachineIncrementalCodeGeneratorTests
     [DataRow("OnlyStatesAndNoTriggers", DisplayName = "OnlyStatesAndNoTriggers")]
     [DataRow("WithConditionsAndActions", DisplayName = "WithConditionsAndActions")]
     [DataRow("Observable", DisplayName = "Observable")]
-    public async Task Generator_GeneratesCode(string testDataName)
+    public async Task Generator_GeneratesSyncCode(string testDataName)
     {
-        var code = await File.ReadAllTextAsync($"TestFiles/{testDataName}.cs", TestContext.CancellationToken);
-        var expectedCode = await File.ReadAllTextAsync($"TestFiles/{testDataName}.e.cs", TestContext.CancellationToken);
+        var code = await File.ReadAllTextAsync($"TestFiles/sync/{testDataName}.cs", TestContext.CancellationToken);
+        var expectedCode = await File.ReadAllTextAsync($"TestFiles/sync/{testDataName}.e.cs", TestContext.CancellationToken);
 #if SNAPSHOTS
         _verifier.OutputFile = Path.Join(Path.GetTempPath(), $"{testDataName}.g.cs");
 #endif

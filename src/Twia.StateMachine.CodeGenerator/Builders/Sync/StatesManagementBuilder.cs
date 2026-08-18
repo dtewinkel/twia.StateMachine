@@ -1,17 +1,17 @@
 ﻿using System.CodeDom.Compiler;
 using Twia.StateMachine.CodeGenerator.Declarations;
 
-namespace Twia.StateMachine.CodeGenerator.Builders;
+namespace Twia.StateMachine.CodeGenerator.Builders.Sync;
 
-internal class StatesManagementBuilder : BuilderBase
+public class StatesManagementBuilder : BuilderBase
 {
-    private readonly IndentedTextWriter _document;
+    private readonly CSharpDocumentWriter _document;
     private readonly StatesBuilder _statesBuilder;
     private readonly TriggersBuilder _triggersBuilder;
     private readonly AfterTransitionsBuilder _afterTransitionsBuilder;
     private readonly ObservableBuilder _observableBuilder;
 
-    public StatesManagementBuilder(IndentedTextWriter document,
+    public StatesManagementBuilder(CSharpDocumentWriter document,
         StatesBuilder statesBuilder, TriggersBuilder triggersBuilder,
         AfterTransitionsBuilder afterTransitionsBuilder, ObservableBuilder observableBuilder)
     {
@@ -174,7 +174,7 @@ public override bool AddPublicMethods()
 
                 if (hasTriggerTransactions)
                 {
-                    var triggersGrouped = triggerTransitions.GroupBy(trigger => trigger.Trigger);
+                    var triggersGrouped = triggerTransitions.GroupBy(trigger => trigger.Trigger).Where(group => group.Key is not null);
                     foreach (var trigger in triggersGrouped)
                     {
                         first = _document.WriteSeparatorLine(first);

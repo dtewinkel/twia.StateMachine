@@ -2,7 +2,8 @@
 
 namespace Twia.StateMachine.CodeGenerator.Declarations;
 
-public class ContainingClassDeclaration : ParentDeclaration, IEquatable<ContainingClassDeclaration>
+[Equatable]
+public sealed partial record ContainingClassDeclaration : ParentDeclaration
 {
     public ContainingClassDeclaration(ClassDeclarationSyntax classDeclaration) : base(classDeclaration)
     {
@@ -11,30 +12,12 @@ public class ContainingClassDeclaration : ParentDeclaration, IEquatable<Containi
 
     public ClassDeclaration ClassDeclaration { get; }
 
+    [IgnoreEquality]
     public ParentDeclaration? Parent => ClassDeclaration.Parent;
 
+    [IgnoreEquality]
     public override string? FullNamespaceName => Parent?.FullNamespaceName;
 
+    [IgnoreEquality]
     public override string HintNameForSource => $"{(Parent is not null ? $"{Parent.HintNameForSource}." : "")}{ClassDeclaration.Name}";
-
-
-    public bool Equals(ContainingClassDeclaration? other)
-    {
-        return other is not null
-               && ClassDeclaration.Equals(other.ClassDeclaration);
-    }
-
-    public override bool Equals(object? other)
-    {
-        return other is ContainingClassDeclaration otherContainingClassDeclaration
-               && Equals(otherContainingClassDeclaration);
-    }
-
-    public override int GetHashCode()
-    {
-        unchecked
-        {
-            return 571 + ClassDeclaration.GetHashCode();
-        }
-    }
 }

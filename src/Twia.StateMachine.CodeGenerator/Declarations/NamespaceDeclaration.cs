@@ -2,7 +2,8 @@
 
 namespace Twia.StateMachine.CodeGenerator.Declarations;
 
-public class NamespaceDeclaration : ParentDeclaration, IEquatable<NamespaceDeclaration>
+[Equatable]
+public sealed partial record NamespaceDeclaration : ParentDeclaration
 {
     private NamespaceDeclaration(BaseNamespaceDeclarationSyntax namespaceDeclaration) : base(namespaceDeclaration)
     {
@@ -34,30 +35,9 @@ public class NamespaceDeclaration : ParentDeclaration, IEquatable<NamespaceDecla
 
     public NamespaceDeclaration? Parent { get; }
 
+    [IgnoreEquality]
     public override string FullNamespaceName => Parent is null ? Name : $"{Parent.FullNamespaceName}.{Name}";
 
+    [IgnoreEquality]
     public override string HintNameForSource => $"{(Parent is not null ? $"{Parent.HintNameForSource}." : "")}{Name}";
-
-    public bool Equals(NamespaceDeclaration? other)
-    {
-        return other is not null
-               && other.Name == Name
-               && ((Parent is null && other.Parent is null) || (Parent?.Equals(other.Parent) ?? false));
-    }
-
-    public override bool Equals(object? other)
-    {
-        return other is NamespaceDeclaration otherNamespaceDeclaration
-               && Equals(otherNamespaceDeclaration);
-    }
-
-    public override int GetHashCode()
-    {
-        unchecked
-        {
-            var hash = 29;
-            hash = hash * 37 + Name.GetHashCode();
-            return hash * 37 + (Parent?.GetHashCode() ?? 0);
-        }
-    }
 }

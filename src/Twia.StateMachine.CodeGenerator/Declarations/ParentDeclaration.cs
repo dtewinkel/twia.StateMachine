@@ -2,7 +2,8 @@
 
 namespace Twia.StateMachine.CodeGenerator.Declarations;
 
-public abstract class ParentDeclaration : Declaration
+[Equatable]
+public abstract partial record ParentDeclaration : Declaration
 {
     protected ParentDeclaration(CSharpSyntaxNode node) : base(node)
     {

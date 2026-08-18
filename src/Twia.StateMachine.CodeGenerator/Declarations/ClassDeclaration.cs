@@ -4,7 +4,8 @@ using Microsoft.CodeAnalysis.CSharp.Syntax;
 
 namespace Twia.StateMachine.CodeGenerator.Declarations;
 
-public class ClassDeclaration : Declaration, IEquatable<ClassDeclaration>
+[Equatable]
+public partial record ClassDeclaration : Declaration
 {
     public ClassDeclaration(ClassDeclarationSyntax node) : base(node)
     {
@@ -32,37 +33,9 @@ public class ClassDeclaration : Declaration, IEquatable<ClassDeclaration>
     public bool IsPartial { get; }
     public ParentDeclaration? Parent { get; }
 
+    [IgnoreEquality]
     public string? FullNamespaceName => Parent?.FullNamespaceName;
 
+    [IgnoreEquality]
     public string HintNameForSource => $"{(Parent is not null ? $"{Parent.HintNameForSource}." : "")}{Name}";
-
-    public virtual bool Equals(ClassDeclaration? other)
-    {
-        if (other is null)
-        {
-            return false;
-        }
-
-        return Modifiers == other.Modifiers
-               && Name == other.Name
-               && IsPartial == other.IsPartial
-               && (ReferenceEquals(Parent, other.Parent) || (Parent?.Equals(other.Parent) ?? false));
-    }
-
-    public override bool Equals(object? other)
-    {
-        return other is ClassDeclaration otherClassDeclaration && Equals(otherClassDeclaration);
-    }
-
-    public override int GetHashCode()
-    {
-        unchecked
-        {
-            var hash = 31;
-            hash = hash * 37 + Name.GetHashCode();
-            hash = hash * 37 + Modifiers.GetHashCode();
-            hash = hash * 37 + IsPartial.GetHashCode();
-            return hash * 37 + (Parent?.GetHashCode() ?? 0);
-        }
-    }
 }

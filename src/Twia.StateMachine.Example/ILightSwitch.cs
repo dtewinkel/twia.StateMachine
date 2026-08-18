@@ -2,8 +2,6 @@
 
 public interface ILightSwitch
 {
-    Task ToOnAsync(CancellationToken cancellationToken = default);
-
     void ToOn();
 
     void ToOff();

@@ -2,7 +2,8 @@
 
 namespace Twia.StateMachine.CodeGenerator.Declarations;
 
-public class OnTriggerTransitionDeclaration : TransitionDeclaration
+[Equatable]
+public partial record OnTriggerTransitionDeclaration : TransitionDeclaration
 {
     public OnTriggerTransitionDeclaration(AttributeData attributeData)
     {

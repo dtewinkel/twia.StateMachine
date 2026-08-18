@@ -1,17 +1,17 @@
 ﻿using System.CodeDom.Compiler;
 using Twia.StateMachine.CodeGenerator.Declarations;
 
-namespace Twia.StateMachine.CodeGenerator.Builders;
+namespace Twia.StateMachine.CodeGenerator.Builders.Sync;
 
-internal class ObservableBuilder : BuilderBase
+public class ObservableBuilder : BuilderBase
 {
-    private readonly IndentedTextWriter _document;
+    private readonly CSharpDocumentWriter _document;
     private readonly StateMachineDeclaration _declaration;
     private readonly StatesBuilder _statesBuilder;
     private readonly string _stateChangedMethodName;
 
 
-    public ObservableBuilder(IndentedTextWriter document, StateMachineDeclaration declaration, ClassCommonBuilder classCommonBuilder, StatesBuilder statesBuilder)
+    public ObservableBuilder(CSharpDocumentWriter document, StateMachineDeclaration declaration, ClassCommonBuilder classCommonBuilder, StatesBuilder statesBuilder)
     {
         _document = document;
         _declaration = declaration;
@@ -45,7 +45,7 @@ internal class ObservableBuilder : BuilderBase
     public override bool AddEvents()
     {
         _document.WriteLine("/// <inheritdoc />");
-        _document.WriteLine($"public event EventHandler<StateChangedEventArgs<{_statesBuilder.StateFullTypeName}>>? OnStateChanged;");
+        _document.WriteLine($"public event global::System.EventHandler<global::Twia.StateMachine.StateChangedEventArgs<{_statesBuilder.StateFullTypeName}>>? OnStateChanged;");
         return true;
     }
 

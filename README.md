@@ -183,6 +183,8 @@ public partial class MyStateMachine
 }
 ```
 
+A transition may be triggerless. In that case the name of the trigger must be set to null.
+
 The example shows that, when in state `Running`, on reception of the trigger `Stop` the state should transition to the state `Stopped`.
 
 :warning: The `Transition` attribute can only be used on methods that also have the `State` or `InitialState` attribute.
@@ -236,9 +238,41 @@ public partial class MyStateMachine
  }
 ```
 
+Entry and Exit actions cal also define a guard condition.
+
+### Internal Transitions
+
+Internal transitions have a trigger, and an actions and can have a guard condition.
+
+Internal after transitions have a time interval, an action and can have a guard condition and a initial delay.
+
+Do activities are started once the state is entered and all `OnEntry` actions have completed. They run in a background task until the state is exited.
+
+```csharp
+[StateMachine]
+public partial class MyStateMachine
+{
+    [InitialState]
+    [Transition(nameof(Run), nameof(Running))]
+    private partial void Stopped();
+
+    [State]
+    [OnEntry("_engine.Run()")]
+    [OnExit("_engine.Stop()")]
+    [Transition(nameof(Stop), nameof(Stopped))]
+    [InternalTransition(nameof(Run), "_engine.Run()")]
+    [InternalTransitionAfter("0:00:05", "_engine.CheckTemperature()")]
+    [Do("_engine.Run()")]
+    [TransitionAfter("1:00:00", nameof(Stopped))]
+    private partial void Running();
+ }
+```
+
+Because internal transitions do not leave the state, their `OnExit` and `OnEntry` actions will not be executed.
+
 ## Generated methods, types, and properties
 
-In addition to the states and trigger, the following methods, types and properties are generated for each state machine class:
+In addition to the states and trigger, the following public methods, types and properties are generated for each state machine class:
 
 - Method `void InitializeStateMachine()`. Initializes the state machine and brings it to the initial state.
 - Enum `State`, embedded in the state machine class. Contains all states of the state machine as enum members.

@@ -1,6 +1,8 @@
 ﻿using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
+using Twia.StateMachine.CodeGenerator.Builders;
 using Twia.StateMachine.CodeGenerator.Declarations;
+using Twia.StateMachine.CodeGenerator.Validators;
 
 namespace Twia.StateMachine.CodeGenerator;
 
@@ -17,10 +19,9 @@ public class StateMachineIncrementalCodeGenerator: IIncrementalGenerator
 
     private static void AddSource(SourceProductionContext context, StateMachineDeclaration declaration)
     {
-        StateMachineValidator.IsDeclarationValid(context, declaration);
-
-        var sourceBuilder = new StateMachineSourceBuilder();
-        sourceBuilder.AddSource(context, declaration);
+        var validator = new StateMachineValidator();
+        validator.IsDeclarationValid(context, declaration);
+        StateMachineSourceBuilder.AddSource(context, declaration);
     }
 
 

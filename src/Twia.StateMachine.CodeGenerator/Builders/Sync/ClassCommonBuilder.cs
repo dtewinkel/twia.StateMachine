@@ -2,18 +2,18 @@
 using System.Reflection;
 using Twia.StateMachine.CodeGenerator.Declarations;
 
-namespace Twia.StateMachine.CodeGenerator.Builders;
+namespace Twia.StateMachine.CodeGenerator.Builders.Sync;
 
-internal class ClassCommonBuilder
+public class ClassCommonBuilder
 {
-    private static readonly string _randomIdInPrefix = Guid.NewGuid().ToString("N").Substring(0, 8);
+    private static readonly string _randomIdInPrefix = Guid.NewGuid().ToString("N")[..8];
 
     private readonly string _generatorVersion;
     private readonly string _generatorName;
 
     private int _nestingLevel = 0;
 
-    private readonly IndentedTextWriter _document;
+    private readonly CSharpDocumentWriter _document;
     private readonly StateMachineDeclaration _declaration;
 
     private readonly string _privatePrefix;
@@ -23,7 +23,7 @@ internal class ClassCommonBuilder
 
     public string FullStateMachineTypeName { get; private set; } = "";
 
-    public ClassCommonBuilder(IndentedTextWriter document, StateMachineDeclaration declaration)
+    public ClassCommonBuilder(CSharpDocumentWriter document, StateMachineDeclaration declaration)
     {
         _document = document;
         _declaration = declaration;

@@ -2,7 +2,7 @@
 
   <PropertyGroup>
     <TargetFrameworks>net10.0;net9.0;net8.0</TargetFrameworks>
-    <ImplicitUsings>enable</ImplicitUsings>
+    <ImplicitUsings>disable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <NoWarn>1701;1702;IDE0290</NoWarn>
     <InformationalVersion>0.0.1 Demo</InformationalVersion>
@@ -19,8 +19,8 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Twia.StateMachine\Twia.StateMachine.csproj" AdditionalProperties="TargetFramework=netstandard2.0" />
-    <ProjectReference Include="..\Twia.StateMachine.CodeGenerator\Twia.StateMachine.CodeGenerator.csproj" PrivateAssets="all" ReferenceOutputAssembly="false" OutputItemType="Analyzer" AdditionalProperties="TargetFramework=netstandard2.0" />
+    <ProjectReference Include="..\Twia.StateMachine\Twia.StateMachine.csproj" />
+    <ProjectReference Include="..\Twia.StateMachine.CodeGenerator\Twia.StateMachine.CodeGenerator.csproj" PrivateAssets="all" ReferenceOutputAssembly="false" OutputItemType="Analyzer" />
   </ItemGroup>
 
 </Project>
