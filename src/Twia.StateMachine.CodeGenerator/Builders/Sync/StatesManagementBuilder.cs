@@ -1,5 +1,4 @@
-﻿using System.CodeDom.Compiler;
-using Twia.StateMachine.CodeGenerator.Declarations;
+﻿using Twia.StateMachine.CodeGenerator.Declarations;
 
 namespace Twia.StateMachine.CodeGenerator.Builders.Sync;
 
@@ -130,6 +129,10 @@ public override bool AddPublicMethods()
                 .Where(transition => transition.TransitionType == TransitionType.OnTrigger).ToList();
             var hasTriggerTransactions = triggerTransitions.Count > 0;
 
+            var triggerlessTransitions = state.Transitions
+                .Where(transition => transition.TransitionType == TransitionType.Triggerless).ToList();
+            var hasTriggerlessTransitions = triggerlessTransitions.Count > 0;
+
             var hasAfterTransitions = _afterTransitionsBuilder.HasAfterTransitions(stateName);
 
             firstStateMethod = _document.WriteSeparatorLine(firstStateMethod);
@@ -150,13 +153,13 @@ public override bool AddPublicMethods()
                 _document.WriteLineNoTabs();
             }
 
-            if (hasEntryTransitions || hasTriggerTransactions || hasAfterTransitions)
+            if (hasEntryTransitions || hasTriggerTransactions || hasAfterTransitions || hasTriggerlessTransitions)
             {
                 _document.WriteLine($"switch ({_triggersBuilder.LastTriggerFieldName})");
                 _document.WriteLineBlockOpen();
                 var first = true;
 
-                if (hasEntryTransitions || hasAfterTransitions)
+                if (hasEntryTransitions || hasAfterTransitions || hasTriggerlessTransitions)
                 {
                     first = _document.WriteSeparatorLine(first);
 
@@ -168,13 +171,27 @@ public override bool AddPublicMethods()
                     {
                         _document.WriteConditionAndAction(transitionDeclaration);
                     }
+
+                    if (hasTriggerlessTransitions)
+                    {
+                        foreach (var transition in triggerlessTransitions)
+                        {
+                            _document.WriteConditionActionAndTransition(transition, onExitCall,
+                                (document, declaration) =>
+                                {
+                                    document.WriteLine($"{_statesBuilder.EnterStateMethodName}({_statesBuilder.StateFullTypeName}.{declaration.TargetState}, \"Triggerless\");");
+                                }
+                            );
+                        }
+                    }
+
                     _document.WriteLine("break;");
                     _document.Indent--;
                 }
 
                 if (hasTriggerTransactions)
                 {
-                    var triggersGrouped = triggerTransitions.GroupBy(trigger => trigger.Trigger).Where(group => group.Key is not null);
+                    var triggersGrouped = triggerTransitions.GroupBy(trigger => trigger.Trigger);
                     foreach (var trigger in triggersGrouped)
                     {
                         first = _document.WriteSeparatorLine(first);

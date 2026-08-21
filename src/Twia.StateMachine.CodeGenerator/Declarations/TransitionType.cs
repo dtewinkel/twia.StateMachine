@@ -5,5 +5,6 @@ public enum TransitionType
     OnTrigger,
     AfterDelay,
     OnEntry,
-    OnExit
+    OnExit,
+    Triggerless
 }

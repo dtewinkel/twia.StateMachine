@@ -10,307 +10,303 @@ namespace Twia.StateMachine.IntegrationTests;
 public partial class StateMachineTransitionTests
 {
     [StateMachine]
-    private partial class TestStateMachine
+    private partial class UnitTestStateMachine
     {
-        public List<string> States { get; } = []; 
+        public int[] OnEntryCounts { get; } = [0, 0, 0];
+        public int[] OnExitCounts { get; } = [0, 0, 0];
+        public int[] TriggerCounts { get; } = [0, 0, 0, 0, 0];
         public List<string> Transitions { get; } = [];
 
-        public int StopCount { get; private set; }
-        public int StartCount { get; private set; }
-        public int StopWithDelayCount { get; private set; }
-        public int AfterCount { get; private set; }
-        public int StoppedEntryCount { get; private set; }
-        public int StartingEntryCount { get; private set; }
-        public int RunningEntryCount { get; private set; }
-        public int StoppingWithDelayEntryCount { get; private set; }
-        public int StoppedExitCount { get; private set; }
-        public int StartingExitCount { get; private set; }
-        public int RunningExitCount { get; private set; }
-        public int StoppingWithDelayExitCount { get; private set; }
+        public bool Condition0 { get; set; } = true;
 
-        public bool CanStart { get; set; } = true;
+        public bool Condition1 { get; set; } = true;
 
-        [State]
-        [Transition(nameof(Stop), nameof(Stopped), Action = "StopCount++; Transitions.Add(\"StopAction\")")]
-        [Transition(nameof(StopWithDelay), nameof(StoppingWithDelay), Action = "StopWithDelayCount++; Transitions.Add(\"StopWithDelayAction\")")]
-        [OnEntry("RunningEntryCount++; States.Add(\"Running\"); Transitions.Add(\"RunningEntry\")")]
-        [OnExit("RunningExitCount++; Transitions.Add(\"RunningExit\")")]
-        private partial void Running();
-
-        [State]
-        [TransitionAfter("0:00:00.200", nameof(Stopped), Action = "AfterCount++; Transitions.Add(\"AfterAction\")")]
-        [OnEntry("StoppingWithDelayEntryCount++; States.Add(\"StoppingWithDelay\"); Transitions.Add(\"StoppingWithDelayEntry\")")]
-        [OnExit("StoppingWithDelayExitCount++; Transitions.Add(\"StoppingWithDelayExit\")")]
-        private partial void StoppingWithDelay();
+        public bool Condition2 { get; set; } = false;
 
         [InitialState]
-        [Transition(nameof(Start), nameof(Running), Action = $"{nameof(StartOnStoppedAction)}()", Condition = $"{nameof(StartOnStoppedCondition)}")]
-        [OnEntry($"{nameof(OnEntryStoppedAction)}()")]
-        [OnExit($"{nameof(OnExitStoppedAction)}()")]
-        private partial void Stopped();
+        [Transition(nameof(Trigger0), nameof(State0), Action = "SetTrigger(State.State0, State.State0, 0)", Condition = nameof(Condition0))]
+        [Transition(nameof(Trigger1), nameof(State1), Action = "SetTrigger(State.State0, State.State1, 1)", Condition = nameof(Condition0))]
+        [Transition(nameof(Trigger2), nameof(State2), Action = "SetTrigger(State.State0, State.State2, 2)", Condition = nameof(Condition0))]
+        [TransitionAfter("0:00:00.200", nameof(State2), Action = "SetTrigger(State.State0, State.State2, 3)", Condition = nameof(Condition0))]
+        [OnEntry("SetEntry(0)")]
+        [OnExit("SetExit(0)")]
+        private partial void State0();
+
+        [State]
+        [Transition(nameof(Trigger0), nameof(State0), Action = "SetTrigger(State.State1, State.State0, 0)", Condition = nameof(Condition0))]
+        [TriggerlessTransition(nameof(State2), Action = "SetTrigger(State.State1, State.State2, 4)", Condition = nameof(Condition1))]
+        [OnEntry("SetEntry(1)")]
+        [OnExit("SetExit(1)")]
+        private partial void State1();
+
+        [State]
+        [Transition(nameof(Trigger1), nameof(State1), Action = "SetTrigger(State.State2, State.State0, 0)", Condition = nameof(Condition0))]
+        [TriggerlessTransition(nameof(State1), Action = "SetTrigger(State.State2, State.State1, 4)", Condition = nameof(Condition2))]
+        [OnEntry("SetEntry(2)")]
+        [OnExit("SetExit(2)")]
+        private partial void State2();
 
         [Trigger]
-        public partial void Start();
+        public partial void Trigger0();
 
         [Trigger]
-        public partial void Stop();
+        public partial void Trigger1();
 
         [Trigger]
-        public partial void StopWithDelay();
+        public partial void Trigger2();
 
-        public void OnEntryStoppedAction()
+        private void SetEntry(int stateIndex)
         {
-            StoppedEntryCount++;
-            States.Add("Stopped");
-            Transitions.Add("StoppedEntry");
+            OnEntryCounts[stateIndex]++;
         }
 
-        public void OnExitStoppedAction()
+        private void SetExit(int stateIndex)
         {
-            StoppedExitCount++;
-            Transitions.Add("StoppedExit");
+            OnExitCounts[stateIndex]++;
         }
 
-        public void StartOnStoppedAction()
+        private void SetTrigger(State fromState, State toState, int triggerIndex)
         {
-            StartCount++;
-            Transitions.Add("StartAction");
-        }
-
-        public bool StartOnStoppedCondition
-        {
-            get
-            {
-                Transitions.Add($"Condition StartOnStopped={CanStart}");
-                return CanStart;
-            }
-        }
-
-        public void OnEntryStartingAction()
-        {
-            StartingEntryCount++;
-            States.Add("Starting");
-            Transitions.Add("StartingEntry");
-        }
-
-        public void OnExitStartingAction()
-        {
-            StartingExitCount++;
-            Transitions.Add("StartingExit");
-        }
-
-        public void TriggerlessOnStartingAction()
-        {
-            StartCount++;
-            Transitions.Add("StartingAction");
-        }
-
-        public bool TriggerlessOnStartingCondition
-        {
-            get
-            {
-                Transitions.Add($"Condition TriggerlessOnStarting={CanStart}");
-                return CanStart;
-            }
+            TriggerCounts[triggerIndex]++;
+            Transitions.Add($"{triggerIndex}: {fromState} -> {toState}");
         }
     }
 
     [TestMethod]
-    public void InitializeStateMachine_SetsInitialStateToStopped()
+    public void InitializeStateMachine_SetsInitialState()
     {
-        var stateMachine = new TestStateMachine();
+        var stateMachine = new UnitTestStateMachine();
         stateMachine.InitializeStateMachine();
 
-        stateMachine.CurrentState.Should().Be(TestStateMachine.State.Stopped);
-        stateMachine.StartCount.Should().Be(0);
-        stateMachine.StopCount.Should().Be(0);
-        stateMachine.RunningEntryCount.Should().Be(0);
-        stateMachine.StoppedEntryCount.Should().Be(1);
-        stateMachine.RunningExitCount.Should().Be(0);
-        stateMachine.StoppedExitCount.Should().Be(0);
-        stateMachine.States.Should().BeEquivalentTo("Stopped");
-        stateMachine.Transitions.Should().BeEquivalentTo("StoppedEntry");
+        stateMachine.CurrentState.Should().Be(UnitTestStateMachine.State.State0);
+        stateMachine.OnEntryCounts.Should().Equal(1, 0, 0);
+        stateMachine.OnExitCounts.Should().Equal(0, 0, 0);
+        stateMachine.TriggerCounts.Should().Equal(0, 0, 0, 0, 0);
+        stateMachine.Transitions.Should().Equal();
     }
 
     [TestMethod]
-    public void Start_InStoppedState_TransitionsToRunningState()
+    public void Trigger0_SetsStateTo0()
     {
-        var stateMachine = new TestStateMachine();
+        var stateMachine = new UnitTestStateMachine()
+        {
+            Condition1 = false
+        };
+
         stateMachine.InitializeStateMachine();
 
-        stateMachine.CurrentState.Should().Be(TestStateMachine.State.Stopped);
+        stateMachine.CurrentState.Should().Be(UnitTestStateMachine.State.State0);
+        stateMachine.OnEntryCounts.Should().Equal(1, 0, 0);
+        stateMachine.OnExitCounts.Should().Equal(0, 0, 0);
+        stateMachine.TriggerCounts.Should().Equal(0, 0, 0, 0, 0);
+        stateMachine.Transitions.Should().Equal();
 
-        stateMachine.Start();
+        stateMachine.Trigger0();
 
-        stateMachine.CurrentState.Should().Be(TestStateMachine.State.Running);
-        stateMachine.StartCount.Should().Be(1);
-        stateMachine.StopCount.Should().Be(0);
-        stateMachine.RunningEntryCount.Should().Be(1);
-        stateMachine.StoppedEntryCount.Should().Be(1);
-        stateMachine.RunningExitCount.Should().Be(0);
-        stateMachine.StoppedExitCount.Should().Be(1);
-        stateMachine.States.Should().BeEquivalentTo(["Stopped", "Running"], options => options.WithStrictOrdering());
-        stateMachine.Transitions.Should().BeEquivalentTo(["StoppedEntry", "Condition StartOnStopped=True", "StoppedExit", "StartAction", "RunningEntry"]
-            , options => options.WithStrictOrdering());
+        stateMachine.CurrentState.Should().Be(UnitTestStateMachine.State.State0);
+        stateMachine.OnEntryCounts.Should().Equal(2, 0, 0);
+        stateMachine.OnExitCounts.Should().Equal(1, 0, 0);
+        stateMachine.TriggerCounts.Should().Equal(1, 0, 0, 0, 0);
+        stateMachine.Transitions.Should().Equal("0: State0 -> State0");
     }
 
     [TestMethod]
-    public void Start_InStoppedState_WithFailingCondition_StaysInStoppedState()
+    public void Trigger1_AndFailingCondition_SetsStateTo1()
     {
-        var stateMachine = new TestStateMachine();
+        var stateMachine = new UnitTestStateMachine
+        {
+            Condition1 = false
+        };
         stateMachine.InitializeStateMachine();
 
-        stateMachine.CurrentState.Should().Be(TestStateMachine.State.Stopped);
-        stateMachine.CanStart = false;
+        stateMachine.CurrentState.Should().Be(UnitTestStateMachine.State.State0);
+        stateMachine.OnEntryCounts.Should().Equal(1, 0, 0);
+        stateMachine.OnExitCounts.Should().Equal(0, 0, 0);
+        stateMachine.TriggerCounts.Should().Equal(0, 0, 0, 0 , 0);
+        stateMachine.Transitions.Should().Equal();
 
-        stateMachine.Start();
+        stateMachine.Trigger1();
 
-        stateMachine.CurrentState.Should().Be(TestStateMachine.State.Stopped);
-        stateMachine.StartCount.Should().Be(0);
-        stateMachine.StopCount.Should().Be(0);
-        stateMachine.RunningEntryCount.Should().Be(0);
-        stateMachine.StoppedEntryCount.Should().Be(1);
-        stateMachine.RunningExitCount.Should().Be(0);
-        stateMachine.StoppedExitCount.Should().Be(0);
-        stateMachine.States.Should().BeEquivalentTo(["Stopped"], options => options.WithStrictOrdering());
-        stateMachine.Transitions.Should().BeEquivalentTo(["StoppedEntry", "Condition StartOnStopped=False"]
-            , options => options.WithStrictOrdering());
+        stateMachine.CurrentState.Should().Be(UnitTestStateMachine.State.State1);
+        stateMachine.OnEntryCounts.Should().Equal(1, 1, 0);
+        stateMachine.OnExitCounts.Should().Equal(1, 0, 0);
+        stateMachine.TriggerCounts.Should().Equal(0, 1, 0, 0, 0);
+        stateMachine.Transitions.Should().Equal("1: State0 -> State1");
+    }
+
+
+    [TestMethod]
+    public void Trigger1_AndFailingCondition_WhenConditionChanges_DoesNotTransition()
+    {
+        var stateMachine = new UnitTestStateMachine
+        {
+            Condition1 = false
+        };
+        stateMachine.InitializeStateMachine();
+
+        stateMachine.CurrentState.Should().Be(UnitTestStateMachine.State.State0);
+        stateMachine.OnEntryCounts.Should().Equal(1, 0, 0);
+        stateMachine.OnExitCounts.Should().Equal(0, 0, 0);
+        stateMachine.TriggerCounts.Should().Equal(0, 0, 0, 0, 0);
+        stateMachine.Transitions.Should().Equal();
+
+        stateMachine.Trigger1();
+
+        stateMachine.CurrentState.Should().Be(UnitTestStateMachine.State.State1);
+        stateMachine.OnEntryCounts.Should().Equal(1, 1, 0);
+        stateMachine.OnExitCounts.Should().Equal(1, 0, 0);
+        stateMachine.TriggerCounts.Should().Equal(0, 1, 0, 0, 0);
+        stateMachine.Transitions.Should().Equal("1: State0 -> State1");
+
+        stateMachine.Condition1 = true;
+
+        stateMachine.CurrentState.Should().Be(UnitTestStateMachine.State.State1);
+        stateMachine.OnEntryCounts.Should().Equal(1, 1, 0);
+        stateMachine.OnExitCounts.Should().Equal(1, 0, 0);
+        stateMachine.TriggerCounts.Should().Equal(0, 1, 0, 0, 0);
+        stateMachine.Transitions.Should().Equal("1: State0 -> State1");
+
+        stateMachine.Trigger1(); // Ignored.
+
+        stateMachine.CurrentState.Should().Be(UnitTestStateMachine.State.State1);
+        stateMachine.OnEntryCounts.Should().Equal(1, 1, 0);
+        stateMachine.OnExitCounts.Should().Equal(1, 0, 0);
+        stateMachine.TriggerCounts.Should().Equal(0, 1, 0, 0, 0);
+        stateMachine.Transitions.Should().Equal("1: State0 -> State1");
+
+        stateMachine.Trigger0();
+
+        stateMachine.CurrentState.Should().Be(UnitTestStateMachine.State.State0);
+        stateMachine.OnEntryCounts.Should().Equal(2, 1, 0);
+        stateMachine.OnExitCounts.Should().Equal(1, 1, 0);
+        stateMachine.TriggerCounts.Should().Equal(1, 1, 0, 0, 0);
+        stateMachine.Transitions.Should().Equal("1: State0 -> State1", "0: State1 -> State0");
     }
 
     [TestMethod]
-    public void Stop_InRunningState_TransitionsToStoppedState()
+    public void Trigger1_AndSuccessfulCondition_FallsThroughFromState1ToState2()
     {
-        var stateMachine = new TestStateMachine();
+        var stateMachine = new UnitTestStateMachine();
         stateMachine.InitializeStateMachine();
 
-        stateMachine.CurrentState.Should().Be(TestStateMachine.State.Stopped);
+        stateMachine.CurrentState.Should().Be(UnitTestStateMachine.State.State0);
+        stateMachine.OnEntryCounts.Should().Equal(1, 0, 0);
+        stateMachine.OnExitCounts.Should().Equal(0, 0, 0);
+        stateMachine.TriggerCounts.Should().Equal(0, 0, 0, 0, 0);
+        stateMachine.Transitions.Should().Equal();
 
-        stateMachine.Start();
+        stateMachine.Condition1 = true;
 
-        stateMachine.CurrentState.Should().Be(TestStateMachine.State.Running);
-        stateMachine.StartCount.Should().Be(1);
-        stateMachine.StopCount.Should().Be(0);
-        stateMachine.RunningEntryCount.Should().Be(1);
-        stateMachine.StoppedEntryCount.Should().Be(1);
-        stateMachine.RunningExitCount.Should().Be(0);
-        stateMachine.StoppedExitCount.Should().Be(1);
-        stateMachine.States.Should().BeEquivalentTo(["Stopped", "Running"], options => options.WithStrictOrdering());
-        stateMachine.Transitions.Should().BeEquivalentTo([
-                "StoppedEntry", "Condition StartOnStopped=True", "StoppedExit", "StartAction", "RunningEntry"],
-            options => options.WithStrictOrdering());
+        stateMachine.Trigger1();
 
-        stateMachine.Stop();
-
-        stateMachine.CurrentState.Should().Be(TestStateMachine.State.Stopped);
-        stateMachine.StartCount.Should().Be(1);
-        stateMachine.StopCount.Should().Be(1);
-        stateMachine.RunningEntryCount.Should().Be(1);
-        stateMachine.StoppedEntryCount.Should().Be(2);
-        stateMachine.RunningExitCount.Should().Be(1);
-        stateMachine.StoppedExitCount.Should().Be(1);
-        stateMachine.States.Should().BeEquivalentTo(["Stopped", "Running", "Stopped"], options => options.WithStrictOrdering());
-        stateMachine.Transitions.Should().BeEquivalentTo([
-            "StoppedEntry", "Condition StartOnStopped=True", "StoppedExit", "StartAction", "RunningEntry",
-            "RunningExit", "StopAction", "StoppedEntry"],
-            options => options.WithStrictOrdering());
+        stateMachine.CurrentState.Should().Be(UnitTestStateMachine.State.State2);
+        stateMachine.OnEntryCounts.Should().Equal(1, 1, 1);
+        stateMachine.OnExitCounts.Should().Equal(1, 1, 0);
+        stateMachine.TriggerCounts.Should().Equal(0, 1, 0, 0, 1);
+        stateMachine.Transitions.Should().Equal("1: State0 -> State1", "4: State1 -> State2");
     }
 
-
-     [TestMethod]
-    public void StopWithDelay_InRunningState_TransitionsToStoppingAndAfterDelayToStoppedState()
+    [TestMethod]
+    public void Trigger2_SetsStateTo2()
     {
-        var stateMachine = new TestStateMachine();
+        var stateMachine = new UnitTestStateMachine();
         stateMachine.InitializeStateMachine();
 
-        stateMachine.CurrentState.Should().Be(TestStateMachine.State.Stopped);
+        stateMachine.CurrentState.Should().Be(UnitTestStateMachine.State.State0);
+        stateMachine.OnEntryCounts.Should().Equal(1, 0, 0);
+        stateMachine.OnExitCounts.Should().Equal(0, 0, 0);
+        stateMachine.TriggerCounts.Should().Equal(0, 0, 0, 0, 0);
+        stateMachine.Transitions.Should().Equal();
 
-        stateMachine.Start();
+        stateMachine.Trigger2();
 
-        stateMachine.CurrentState.Should().Be(TestStateMachine.State.Running);
-        stateMachine.StartCount.Should().Be(1);
-        stateMachine.StopWithDelayCount.Should().Be(0);
-        stateMachine.StopCount.Should().Be(0);
-        stateMachine.AfterCount.Should().Be(0);
-        stateMachine.RunningEntryCount.Should().Be(1);
-        stateMachine.StoppedEntryCount.Should().Be(1);
-        stateMachine.RunningExitCount.Should().Be(0);
-        stateMachine.StoppedExitCount.Should().Be(1);
-        stateMachine.States.Should().BeEquivalentTo(["Stopped", "Running"], options => options.WithStrictOrdering());
-        stateMachine.Transitions.Should().BeEquivalentTo([
-                "StoppedEntry", "Condition StartOnStopped=True", "StoppedExit", "StartAction", "RunningEntry"],
-            options => options.WithStrictOrdering());
+        stateMachine.CurrentState.Should().Be(UnitTestStateMachine.State.State2);
+        stateMachine.OnEntryCounts.Should().Equal(1, 0, 1);
+        stateMachine.OnExitCounts.Should().Equal(1, 0, 0);
+        stateMachine.TriggerCounts.Should().Equal(0, 0, 1, 0, 0);
+        stateMachine.Transitions.Should().Equal("2: State0 -> State2");
+    }
 
-        stateMachine.StopWithDelay();
+    [TestMethod]
+    public void Trigger2_WithFailingCondition_DoesNotTransition()
+    {
+        var stateMachine = new UnitTestStateMachine();
+        stateMachine.InitializeStateMachine();
 
-        stateMachine.CurrentState.Should().Be(TestStateMachine.State.StoppingWithDelay);
-        stateMachine.StartCount.Should().Be(1);
-        stateMachine.StopWithDelayCount.Should().Be(1);
-        stateMachine.StopCount.Should().Be(0);
-        stateMachine.AfterCount.Should().Be(0);
-        stateMachine.RunningEntryCount.Should().Be(1);
-        stateMachine.StoppedEntryCount.Should().Be(1);
-        stateMachine.StoppingWithDelayEntryCount.Should().Be(1);
-        stateMachine.RunningExitCount.Should().Be(1);
-        stateMachine.StoppedExitCount.Should().Be(1);
-        stateMachine.StoppingWithDelayExitCount.Should().Be(0);
-        stateMachine.States.Should().BeEquivalentTo(["Stopped", "Running", "StoppingWithDelay"], options => options.WithStrictOrdering());
-        stateMachine.Transitions.Should().BeEquivalentTo([
-                "StoppedEntry", "Condition StartOnStopped=True", "StoppedExit", "StartAction", "RunningEntry",
-                "RunningExit", "StopWithDelayAction", "StoppingWithDelayEntry"],
-            options => options.WithStrictOrdering());
+        stateMachine.CurrentState.Should().Be(UnitTestStateMachine.State.State0);
+        stateMachine.OnEntryCounts.Should().Equal(1, 0, 0);
+        stateMachine.OnExitCounts.Should().Equal(0, 0, 0);
+        stateMachine.TriggerCounts.Should().Equal(0, 0, 0, 0, 0);
+        stateMachine.Transitions.Should().Equal();
+
+        stateMachine.Condition0 = false;
+        stateMachine.Trigger2();
+
+        stateMachine.CurrentState.Should().Be(UnitTestStateMachine.State.State0);
+        stateMachine.OnEntryCounts.Should().Equal(1, 0, 0);
+        stateMachine.OnExitCounts.Should().Equal(0, 0, 0);
+        stateMachine.TriggerCounts.Should().Equal(0, 0, 0, 0, 0);
+        stateMachine.Transitions.Should().Equal();
+    }
+
+    [TestMethod]
+    public void AfterTrigger_SetsStateTo2()
+    {
+        var stateMachine = new UnitTestStateMachine();
+        stateMachine.InitializeStateMachine();
+
+        stateMachine.CurrentState.Should().Be(UnitTestStateMachine.State.State0);
+        stateMachine.OnEntryCounts.Should().Equal(1, 0, 0);
+        stateMachine.OnExitCounts.Should().Equal(0, 0, 0);
+        stateMachine.TriggerCounts.Should().Equal(0, 0, 0, 0, 0);
+        stateMachine.Transitions.Should().Equal();
 
         Thread.Sleep(TimeSpan.FromMilliseconds(100));
-        stateMachine.CurrentState.Should().Be(TestStateMachine.State.StoppingWithDelay);
 
-        Thread.Sleep(TimeSpan.FromMilliseconds(150));
-        stateMachine.CurrentState.Should().Be(TestStateMachine.State.Stopped);
-        stateMachine.StartCount.Should().Be(1);
-        stateMachine.StopWithDelayCount.Should().Be(1);
-        stateMachine.StopCount.Should().Be(0);
-        stateMachine.AfterCount.Should().Be(1);
-        stateMachine.RunningEntryCount.Should().Be(1);
-        stateMachine.StoppedEntryCount.Should().Be(2);
-        stateMachine.StoppingWithDelayEntryCount.Should().Be(1);
-        stateMachine.RunningExitCount.Should().Be(1);
-        stateMachine.StoppedExitCount.Should().Be(1);
-        stateMachine.StoppingWithDelayExitCount.Should().Be(1);
-        stateMachine.States.Should().BeEquivalentTo(["Stopped", "Running", "StoppingWithDelay", "Stopped"], options => options.WithStrictOrdering());
-        stateMachine.Transitions.Should().BeEquivalentTo([
-                "StoppedEntry", "Condition StartOnStopped=True", "StoppedExit", "StartAction", "RunningEntry",
-                "RunningExit", "StopWithDelayAction", "StoppingWithDelayEntry", "StoppingWithDelayExit", "AfterAction", "StoppedEntry"],
-            options => options.WithStrictOrdering());
+        stateMachine.CurrentState.Should().Be(UnitTestStateMachine.State.State0);
+        stateMachine.OnEntryCounts.Should().Equal(1, 0, 0);
+        stateMachine.OnExitCounts.Should().Equal(0, 0, 0);
+        stateMachine.TriggerCounts.Should().Equal(0, 0, 0, 0, 0);
+        stateMachine.Transitions.Should().Equal();
+
+        Thread.Sleep(TimeSpan.FromMilliseconds(250));
+
+        stateMachine.CurrentState.Should().Be(UnitTestStateMachine.State.State2);
+        stateMachine.OnEntryCounts.Should().Equal(1, 0, 1);
+        stateMachine.OnExitCounts.Should().Equal(1, 0, 0);
+        stateMachine.TriggerCounts.Should().Equal(0, 0, 0, 1, 0);
+        stateMachine.Transitions.Should().Equal("3: State0 -> State2");
     }
 
     [TestMethod]
-    public void Stop_InStoppedState_IgnoresTrigger()
+    public void AfterTrigger_WithFailingCondition_DoesNotTransition()
     {
-        var stateMachine = new TestStateMachine();
+        var stateMachine = new UnitTestStateMachine
+        {
+            Condition0 = false
+        };
         stateMachine.InitializeStateMachine();
 
-        stateMachine.CurrentState.Should().Be(TestStateMachine.State.Stopped);
+        stateMachine.CurrentState.Should().Be(UnitTestStateMachine.State.State0);
+        stateMachine.OnEntryCounts.Should().Equal(1, 0, 0);
+        stateMachine.OnExitCounts.Should().Equal(0, 0, 0);
+        stateMachine.TriggerCounts.Should().Equal(0, 0, 0, 0, 0);
+        stateMachine.Transitions.Should().Equal();
 
-        stateMachine.CurrentState.Should().Be(TestStateMachine.State.Stopped);
-        stateMachine.StartCount.Should().Be(0);
-        // Stop action is not executed because we are already in Stopped state, so StopCount remains 0.
-        stateMachine.StopCount.Should().Be(0);
-        stateMachine.RunningEntryCount.Should().Be(0);
-        stateMachine.StoppedEntryCount.Should().Be(1);
-        stateMachine.RunningExitCount.Should().Be(0);
-        stateMachine.StoppedExitCount.Should().Be(0);
-        stateMachine.States.Should().BeEquivalentTo(["Stopped"], options => options.WithStrictOrdering());
-        stateMachine.Transitions.Should().BeEquivalentTo(["StoppedEntry"], options => options.WithStrictOrdering());
+        Thread.Sleep(TimeSpan.FromMilliseconds(100));
 
-        stateMachine.Stop();
+        stateMachine.CurrentState.Should().Be(UnitTestStateMachine.State.State0);
+        stateMachine.OnEntryCounts.Should().Equal(1, 0, 0);
+        stateMachine.OnExitCounts.Should().Equal(0, 0, 0);
+        stateMachine.TriggerCounts.Should().Equal(0, 0, 0, 0, 0);
+        stateMachine.Transitions.Should().Equal();
 
-        stateMachine.CurrentState.Should().Be(TestStateMachine.State.Stopped);
-        stateMachine.StartCount.Should().Be(0);
-        // Stop action is not executed because we are already in Stopped state, so StopCount remains 0.
-        stateMachine.StopCount.Should().Be(0);
-        stateMachine.RunningEntryCount.Should().Be(0);
-        stateMachine.StoppedEntryCount.Should().Be(1);
-        stateMachine.RunningExitCount.Should().Be(0);
-        stateMachine.StoppedExitCount.Should().Be(0);
-        stateMachine.States.Should().BeEquivalentTo(["Stopped"], options => options.WithStrictOrdering());
-        stateMachine.Transitions.Should().BeEquivalentTo(["StoppedEntry"], options => options.WithStrictOrdering());
+        Thread.Sleep(TimeSpan.FromMilliseconds(250));
+
+        stateMachine.CurrentState.Should().Be(UnitTestStateMachine.State.State0);
+        stateMachine.OnEntryCounts.Should().Equal(1, 0, 0);
+        stateMachine.OnExitCounts.Should().Equal(0, 0, 0);
+        stateMachine.TriggerCounts.Should().Equal(0, 0, 0, 0, 0);
+        stateMachine.Transitions.Should().Equal();
     }
 }
