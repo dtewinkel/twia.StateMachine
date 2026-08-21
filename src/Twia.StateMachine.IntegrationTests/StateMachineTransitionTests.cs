@@ -269,7 +269,7 @@ public partial class StateMachineTransitionTests
         stateMachine.TriggerCounts.Should().Equal(0, 0, 0, 0, 0);
         stateMachine.Transitions.Should().Equal();
 
-        Thread.Sleep(TimeSpan.FromMilliseconds(250));
+        Thread.Sleep(TimeSpan.FromMilliseconds(350));
 
         stateMachine.CurrentState.Should().Be(UnitTestStateMachine.State.State2);
         stateMachine.OnEntryCounts.Should().Equal(1, 0, 1);

@@ -112,6 +112,15 @@ internal partial class UnitTestEmptyStateMachine
     {
         switch (__{{GeneratedId}}_LastTrigger)
         {
+            case __{{GeneratedId}}_Trigger.__{{GeneratedId}}_Entry:
+                if (CanTransitionTriggerless == true)
+                {
+                    CanTransitionTriggerless = false;
+
+                    __{{GeneratedId}}_EnterState(UnitTestEmptyStateMachine.State.On, "Triggerless");
+                }
+                break;
+
             case __{{GeneratedId}}_Trigger.ButtonPressed:
                 if (CanTransition == true)
                 {
