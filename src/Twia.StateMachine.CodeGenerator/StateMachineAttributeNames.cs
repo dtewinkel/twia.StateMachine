@@ -10,6 +10,8 @@ internal static class StateMachineAttributeNames
     public const string TransitionAfterAttributeName = "Twia.StateMachine.TransitionAfterAttribute";
     public const string TriggerlessTransitionAttributeName = "Twia.StateMachine.TriggerlessTransitionAttribute";
     public const string InternalTransitionAttributeName = "Twia.StateMachine.InternalTransitionAttribute";
+    public const string InternalAfterAttributeName = "Twia.StateMachine.InternalAfterAttribute";
+    public const string InternalAfterEveryAttributeName = "Twia.StateMachine.InternalAfterEveryAttribute";
     public const string OnEntryAttributeName = "Twia.StateMachine.OnEntryAttribute";
     public const string OnExitAttributeName = "Twia.StateMachine.OnExitAttribute";
 
@@ -17,6 +19,7 @@ internal static class StateMachineAttributeNames
         TriggerAttributeName, StateAttributeName, InitialStateAttributeName,
         TransitionAttributeName, TransitionAfterAttributeName, 
         TriggerlessTransitionAttributeName, InternalTransitionAttributeName,
+        InternalAfterAttributeName, InternalAfterEveryAttributeName,
         OnEntryAttributeName, OnExitAttributeName
     ];
 }

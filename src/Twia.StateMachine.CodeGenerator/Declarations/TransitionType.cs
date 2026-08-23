@@ -7,5 +7,7 @@ public enum TransitionType
     OnEntry,
     OnExit,
     Triggerless,
-    Internal
+    Internal,
+    InternalAfter,
+    InternalAfterEvery
 }

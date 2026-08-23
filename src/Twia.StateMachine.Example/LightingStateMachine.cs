@@ -5,6 +5,8 @@ public partial class LightingStateMachine
 {
     private readonly ILightSwitch _lightSwitch;
     private readonly ILightSensor _lightSensor;
+    private int _counter = 0;
+
 
     public LightingStateMachine(ILightSwitch lightSwitch, ILightSensor lightSensor)
     {
@@ -48,7 +50,9 @@ public partial class LightingStateMachine
 
     [Transition(nameof(PresenceDetected), nameof(ManualOn))]
     [Transition(nameof(ButtonPressed), nameof(ManualToOff))]
-    [TransitionAfter("PT20M20.4S", nameof(LightOff))]
+    [TransitionAfter("PT20M20.4S", nameof(LightOff), Condition = "_counter > 6", Action = "_counter = 0")]
+    [InternalAfter("PT1S", "_counter = 0", Condition = "_counter > 0")]
+    [InternalAfterEvery("PT10S", "_counter++", InitialDelay = "PT20S")]
     [State]
     private partial void AutoManualToOff();
 

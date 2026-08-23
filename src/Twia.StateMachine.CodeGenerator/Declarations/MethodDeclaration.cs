@@ -48,6 +48,14 @@ public sealed partial record MethodDeclaration : Declaration
                 case StateMachineAttributeNames.InternalTransitionAttributeName:
                     Transitions.Add(new InternalTransitionDeclaration(attributeData));
                     break;
+
+                case StateMachineAttributeNames.InternalAfterAttributeName:
+                    Transitions.Add(new InternalAfterDeclaration(Name, index++, attributeData));
+                    break;
+
+                case StateMachineAttributeNames.InternalAfterEveryAttributeName:
+                    Transitions.Add(new InternalAfterEveryDeclaration(Name, index++, attributeData));
+                    break;
             }
         }
 

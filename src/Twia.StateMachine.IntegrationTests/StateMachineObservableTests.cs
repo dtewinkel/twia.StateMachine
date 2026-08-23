@@ -14,17 +14,19 @@ public partial class StateMachineObservableTests
     private partial class TestStateMachine
     {
         public bool Allowed { get; set; }
+        public bool TriggerlessAllowed { get; set; }
 
         [InitialState]
         [Transition(nameof(Trigger1), nameof(State1))]
         [Transition(nameof(Trigger2), nameof(State2))]
         [Transition(nameof(Trigger3), nameof(State3), Condition = "Allowed == true")]
+        [TriggerlessTransition(nameof(State3), Condition = "TriggerlessAllowed == true")]
         private partial void State1();
 
         [State]
         [Transition(nameof(Trigger3), nameof(State1))]
         [Transition(nameof(Trigger1), nameof(State3))]
-        [TransitionAfter("0:00:00.500", nameof(State2))]
+        [TransitionAfter("0:00:00.500", nameof(State3))]
         private partial void State2();
 
         [State]
@@ -138,13 +140,13 @@ public partial class StateMachineObservableTests
 
         Thread.Sleep(TimeSpan.FromMilliseconds(750));
 
-        stateMachine.CurrentState.Should().Be(TestStateMachine.State.State2);
+        stateMachine.CurrentState.Should().Be(TestStateMachine.State.State3);
 
         _events.Count.Should().Be(3);
 
         var eventArgs = _events.Last();
         eventArgs.FromState.Should().Be(TestStateMachine.State.State2);
-        eventArgs.ToState.Should().Be(TestStateMachine.State.State2);
+        eventArgs.ToState.Should().Be(TestStateMachine.State.State3);
         eventArgs.Reason.Should().Be("After: 0:00:00.500");
     }
 
@@ -185,7 +187,6 @@ public partial class StateMachineObservableTests
         eventArgs.Reason.Should().Be("Trigger: Trigger3");
     }
 
-
     [TestMethod]
     public void InitializeStateMachine_ReportsStateChange()
     {
@@ -205,5 +206,24 @@ public partial class StateMachineObservableTests
         eventArgs.FromState.Should().Be(TestStateMachine.State.State1);
         eventArgs.ToState.Should().Be(TestStateMachine.State.State3);
         eventArgs.Reason.Should().Be("Trigger: Trigger3");
+    }
+
+    [TestMethod]
+    public void TriggerlessTransition_ReportsStateChange()
+    {
+        var stateMachine = new TestStateMachine();
+
+        stateMachine.OnStateChanged += StateMachineOnStateChanged;
+        stateMachine.TriggerlessAllowed = true;
+        stateMachine.InitializeStateMachine();
+
+        stateMachine.CurrentState.Should().Be(TestStateMachine.State.State3);
+
+        _events.Count.Should().Be(2);
+
+        var eventArgs = _events.Last();
+        eventArgs.FromState.Should().Be(TestStateMachine.State.State1);
+        eventArgs.ToState.Should().Be(TestStateMachine.State.State3);
+        eventArgs.Reason.Should().Be("Triggerless");
     }
 }

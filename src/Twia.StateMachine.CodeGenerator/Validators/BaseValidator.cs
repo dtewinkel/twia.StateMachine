@@ -89,7 +89,7 @@ public class BaseValidator
         foreach (var state in states)
         {
             var transitions =
-                state.Transitions.Where(transition => transition.TransitionType == TransitionType.AfterDelay);
+                state.Transitions.Where(transition => transition.TransitionType is TransitionType.AfterDelay or TransitionType.InternalAfter or TransitionType.InternalAfterEvery);
             foreach (var transitionDeclaration in transitions)
             {
                 var trigger = transitionDeclaration.Trigger;

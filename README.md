@@ -288,10 +288,9 @@ public partial class MyStateMachine
     [OnEntry("_engine.Run()")]
     [OnExit("_engine.Stop()")]
     [Transition(nameof(Stop), nameof(Stopped))]
-    [InternalTransition(nameof(Run), "_engine.Run()")]
-    [InternalAfter("0:00:05", "_engine.CheckTemperature()")]
-    [InternalAfterEvery("0:00:05", "_engine.CheckTemperature()")]
-    [Do("_engine.Run()")]
+    [Internal(nameof(Run), "_engine.Run()")]
+    [InternalAfter("0:00:55", "_engine.StartCooling()")]
+    [InternalAfterEvery("0:00:05", "_engine.CheckTemperature()", InitialDelay = "PT1H")]
     [TransitionAfter("1:00:00", nameof(Stopped))]
     private partial void Running();
  }
