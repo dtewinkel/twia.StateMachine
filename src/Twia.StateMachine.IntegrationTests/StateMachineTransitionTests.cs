@@ -14,7 +14,7 @@ public partial class StateMachineTransitionTests
     {
         public int[] OnEntryCounts { get; } = [0, 0, 0];
         public int[] OnExitCounts { get; } = [0, 0, 0];
-        public int[] TriggerCounts { get; } = [0, 0, 0, 0, 0];
+        public int[] TriggerCounts { get; } = [0, 0, 0, 0, 0, 0];
         public List<string> Transitions { get; } = [];
 
         public bool Condition0 { get; set; } = true;
@@ -27,6 +27,7 @@ public partial class StateMachineTransitionTests
         [Transition(nameof(Trigger0), nameof(State0), Action = "SetTrigger(State.State0, State.State0, 0)", Condition = nameof(Condition0))]
         [Transition(nameof(Trigger1), nameof(State1), Action = "SetTrigger(State.State0, State.State1, 1)", Condition = nameof(Condition0))]
         [Transition(nameof(Trigger2), nameof(State2), Action = "SetTrigger(State.State0, State.State2, 2)", Condition = nameof(Condition0))]
+        [InternalTransition(nameof(Trigger5), "SetTrigger(State.State0, State.State0, 5)", Condition = nameof(Condition0))]
         [TransitionAfter("0:00:00.200", nameof(State2), Action = "SetTrigger(State.State0, State.State2, 3)", Condition = nameof(Condition0))]
         [OnEntry("SetEntry(0)")]
         [OnExit("SetExit(0)")]
@@ -55,6 +56,9 @@ public partial class StateMachineTransitionTests
         [Trigger]
         public partial void Trigger2();
 
+        [Trigger]
+        public partial void Trigger5();
+
         private void SetEntry(int stateIndex)
         {
             OnEntryCounts[stateIndex]++;
@@ -81,7 +85,7 @@ public partial class StateMachineTransitionTests
         stateMachine.CurrentState.Should().Be(UnitTestStateMachine.State.State0);
         stateMachine.OnEntryCounts.Should().Equal(1, 0, 0);
         stateMachine.OnExitCounts.Should().Equal(0, 0, 0);
-        stateMachine.TriggerCounts.Should().Equal(0, 0, 0, 0, 0);
+        stateMachine.TriggerCounts.Should().Equal(0, 0, 0, 0, 0, 0);
         stateMachine.Transitions.Should().Equal();
     }
 
@@ -98,7 +102,7 @@ public partial class StateMachineTransitionTests
         stateMachine.CurrentState.Should().Be(UnitTestStateMachine.State.State0);
         stateMachine.OnEntryCounts.Should().Equal(1, 0, 0);
         stateMachine.OnExitCounts.Should().Equal(0, 0, 0);
-        stateMachine.TriggerCounts.Should().Equal(0, 0, 0, 0, 0);
+        stateMachine.TriggerCounts.Should().Equal(0, 0, 0, 0, 0, 0);
         stateMachine.Transitions.Should().Equal();
 
         stateMachine.Trigger0();
@@ -106,7 +110,7 @@ public partial class StateMachineTransitionTests
         stateMachine.CurrentState.Should().Be(UnitTestStateMachine.State.State0);
         stateMachine.OnEntryCounts.Should().Equal(2, 0, 0);
         stateMachine.OnExitCounts.Should().Equal(1, 0, 0);
-        stateMachine.TriggerCounts.Should().Equal(1, 0, 0, 0, 0);
+        stateMachine.TriggerCounts.Should().Equal(1, 0, 0, 0, 0, 0);
         stateMachine.Transitions.Should().Equal("0: State0 -> State0");
     }
 
@@ -122,7 +126,7 @@ public partial class StateMachineTransitionTests
         stateMachine.CurrentState.Should().Be(UnitTestStateMachine.State.State0);
         stateMachine.OnEntryCounts.Should().Equal(1, 0, 0);
         stateMachine.OnExitCounts.Should().Equal(0, 0, 0);
-        stateMachine.TriggerCounts.Should().Equal(0, 0, 0, 0 , 0);
+        stateMachine.TriggerCounts.Should().Equal(0, 0, 0, 0, 0, 0);
         stateMachine.Transitions.Should().Equal();
 
         stateMachine.Trigger1();
@@ -130,7 +134,7 @@ public partial class StateMachineTransitionTests
         stateMachine.CurrentState.Should().Be(UnitTestStateMachine.State.State1);
         stateMachine.OnEntryCounts.Should().Equal(1, 1, 0);
         stateMachine.OnExitCounts.Should().Equal(1, 0, 0);
-        stateMachine.TriggerCounts.Should().Equal(0, 1, 0, 0, 0);
+        stateMachine.TriggerCounts.Should().Equal(0, 1, 0, 0, 0, 0);
         stateMachine.Transitions.Should().Equal("1: State0 -> State1");
     }
 
@@ -147,7 +151,7 @@ public partial class StateMachineTransitionTests
         stateMachine.CurrentState.Should().Be(UnitTestStateMachine.State.State0);
         stateMachine.OnEntryCounts.Should().Equal(1, 0, 0);
         stateMachine.OnExitCounts.Should().Equal(0, 0, 0);
-        stateMachine.TriggerCounts.Should().Equal(0, 0, 0, 0, 0);
+        stateMachine.TriggerCounts.Should().Equal(0, 0, 0, 0, 0, 0);
         stateMachine.Transitions.Should().Equal();
 
         stateMachine.Trigger1();
@@ -155,7 +159,7 @@ public partial class StateMachineTransitionTests
         stateMachine.CurrentState.Should().Be(UnitTestStateMachine.State.State1);
         stateMachine.OnEntryCounts.Should().Equal(1, 1, 0);
         stateMachine.OnExitCounts.Should().Equal(1, 0, 0);
-        stateMachine.TriggerCounts.Should().Equal(0, 1, 0, 0, 0);
+        stateMachine.TriggerCounts.Should().Equal(0, 1, 0, 0, 0, 0);
         stateMachine.Transitions.Should().Equal("1: State0 -> State1");
 
         stateMachine.Condition1 = true;
@@ -163,7 +167,7 @@ public partial class StateMachineTransitionTests
         stateMachine.CurrentState.Should().Be(UnitTestStateMachine.State.State1);
         stateMachine.OnEntryCounts.Should().Equal(1, 1, 0);
         stateMachine.OnExitCounts.Should().Equal(1, 0, 0);
-        stateMachine.TriggerCounts.Should().Equal(0, 1, 0, 0, 0);
+        stateMachine.TriggerCounts.Should().Equal(0, 1, 0, 0, 0, 0);
         stateMachine.Transitions.Should().Equal("1: State0 -> State1");
 
         stateMachine.Trigger1(); // Ignored.
@@ -171,7 +175,7 @@ public partial class StateMachineTransitionTests
         stateMachine.CurrentState.Should().Be(UnitTestStateMachine.State.State1);
         stateMachine.OnEntryCounts.Should().Equal(1, 1, 0);
         stateMachine.OnExitCounts.Should().Equal(1, 0, 0);
-        stateMachine.TriggerCounts.Should().Equal(0, 1, 0, 0, 0);
+        stateMachine.TriggerCounts.Should().Equal(0, 1, 0, 0, 0, 0);
         stateMachine.Transitions.Should().Equal("1: State0 -> State1");
 
         stateMachine.Trigger0();
@@ -179,7 +183,7 @@ public partial class StateMachineTransitionTests
         stateMachine.CurrentState.Should().Be(UnitTestStateMachine.State.State0);
         stateMachine.OnEntryCounts.Should().Equal(2, 1, 0);
         stateMachine.OnExitCounts.Should().Equal(1, 1, 0);
-        stateMachine.TriggerCounts.Should().Equal(1, 1, 0, 0, 0);
+        stateMachine.TriggerCounts.Should().Equal(1, 1, 0, 0, 0, 0);
         stateMachine.Transitions.Should().Equal("1: State0 -> State1", "0: State1 -> State0");
     }
 
@@ -192,7 +196,7 @@ public partial class StateMachineTransitionTests
         stateMachine.CurrentState.Should().Be(UnitTestStateMachine.State.State0);
         stateMachine.OnEntryCounts.Should().Equal(1, 0, 0);
         stateMachine.OnExitCounts.Should().Equal(0, 0, 0);
-        stateMachine.TriggerCounts.Should().Equal(0, 0, 0, 0, 0);
+        stateMachine.TriggerCounts.Should().Equal(0, 0, 0, 0, 0, 0);
         stateMachine.Transitions.Should().Equal();
 
         stateMachine.Condition1 = true;
@@ -202,7 +206,7 @@ public partial class StateMachineTransitionTests
         stateMachine.CurrentState.Should().Be(UnitTestStateMachine.State.State2);
         stateMachine.OnEntryCounts.Should().Equal(1, 1, 1);
         stateMachine.OnExitCounts.Should().Equal(1, 1, 0);
-        stateMachine.TriggerCounts.Should().Equal(0, 1, 0, 0, 1);
+        stateMachine.TriggerCounts.Should().Equal(0, 1, 0, 0, 1, 0);
         stateMachine.Transitions.Should().Equal("1: State0 -> State1", "4: State1 -> State2");
     }
 
@@ -215,7 +219,7 @@ public partial class StateMachineTransitionTests
         stateMachine.CurrentState.Should().Be(UnitTestStateMachine.State.State0);
         stateMachine.OnEntryCounts.Should().Equal(1, 0, 0);
         stateMachine.OnExitCounts.Should().Equal(0, 0, 0);
-        stateMachine.TriggerCounts.Should().Equal(0, 0, 0, 0, 0);
+        stateMachine.TriggerCounts.Should().Equal(0, 0, 0, 0, 0, 0);
         stateMachine.Transitions.Should().Equal();
 
         stateMachine.Trigger2();
@@ -223,7 +227,7 @@ public partial class StateMachineTransitionTests
         stateMachine.CurrentState.Should().Be(UnitTestStateMachine.State.State2);
         stateMachine.OnEntryCounts.Should().Equal(1, 0, 1);
         stateMachine.OnExitCounts.Should().Equal(1, 0, 0);
-        stateMachine.TriggerCounts.Should().Equal(0, 0, 1, 0, 0);
+        stateMachine.TriggerCounts.Should().Equal(0, 0, 1, 0, 0, 0);
         stateMachine.Transitions.Should().Equal("2: State0 -> State2");
     }
 
@@ -236,7 +240,7 @@ public partial class StateMachineTransitionTests
         stateMachine.CurrentState.Should().Be(UnitTestStateMachine.State.State0);
         stateMachine.OnEntryCounts.Should().Equal(1, 0, 0);
         stateMachine.OnExitCounts.Should().Equal(0, 0, 0);
-        stateMachine.TriggerCounts.Should().Equal(0, 0, 0, 0, 0);
+        stateMachine.TriggerCounts.Should().Equal(0, 0, 0, 0, 0, 0);
         stateMachine.Transitions.Should().Equal();
 
         stateMachine.Condition0 = false;
@@ -245,7 +249,51 @@ public partial class StateMachineTransitionTests
         stateMachine.CurrentState.Should().Be(UnitTestStateMachine.State.State0);
         stateMachine.OnEntryCounts.Should().Equal(1, 0, 0);
         stateMachine.OnExitCounts.Should().Equal(0, 0, 0);
-        stateMachine.TriggerCounts.Should().Equal(0, 0, 0, 0, 0);
+        stateMachine.TriggerCounts.Should().Equal(0, 0, 0, 0, 0, 0);
+        stateMachine.Transitions.Should().Equal();
+    }
+
+    [TestMethod]
+    public void Trigger5_DoesInternalTransition()
+    {
+        var stateMachine = new UnitTestStateMachine();
+        stateMachine.InitializeStateMachine();
+
+        stateMachine.CurrentState.Should().Be(UnitTestStateMachine.State.State0);
+        stateMachine.OnEntryCounts.Should().Equal(1, 0, 0);
+        stateMachine.OnExitCounts.Should().Equal(0, 0, 0);
+        stateMachine.TriggerCounts.Should().Equal(0, 0, 0, 0, 0, 0);
+        stateMachine.Transitions.Should().Equal();
+
+        stateMachine.Condition0 = true;
+        stateMachine.Trigger5();
+
+        stateMachine.CurrentState.Should().Be(UnitTestStateMachine.State.State0);
+        stateMachine.OnEntryCounts.Should().Equal(1, 0, 0);
+        stateMachine.OnExitCounts.Should().Equal(0, 0, 0);
+        stateMachine.TriggerCounts.Should().Equal(0, 0, 0, 0, 0, 1);
+        stateMachine.Transitions.Should().Equal("5: State0 -> State0");
+    }
+
+    [TestMethod]
+    public void Trigger5_WithFailingCondition_DoesNotTransition()
+    {
+        var stateMachine = new UnitTestStateMachine();
+        stateMachine.InitializeStateMachine();
+
+        stateMachine.CurrentState.Should().Be(UnitTestStateMachine.State.State0);
+        stateMachine.OnEntryCounts.Should().Equal(1, 0, 0);
+        stateMachine.OnExitCounts.Should().Equal(0, 0, 0);
+        stateMachine.TriggerCounts.Should().Equal(0, 0, 0, 0, 0, 0);
+        stateMachine.Transitions.Should().Equal();
+
+        stateMachine.Condition0 = false;
+        stateMachine.Trigger5();
+
+        stateMachine.CurrentState.Should().Be(UnitTestStateMachine.State.State0);
+        stateMachine.OnEntryCounts.Should().Equal(1, 0, 0);
+        stateMachine.OnExitCounts.Should().Equal(0, 0, 0);
+        stateMachine.TriggerCounts.Should().Equal(0, 0, 0, 0, 0, 0);
         stateMachine.Transitions.Should().Equal();
     }
 
@@ -258,7 +306,7 @@ public partial class StateMachineTransitionTests
         stateMachine.CurrentState.Should().Be(UnitTestStateMachine.State.State0);
         stateMachine.OnEntryCounts.Should().Equal(1, 0, 0);
         stateMachine.OnExitCounts.Should().Equal(0, 0, 0);
-        stateMachine.TriggerCounts.Should().Equal(0, 0, 0, 0, 0);
+        stateMachine.TriggerCounts.Should().Equal(0, 0, 0, 0, 0, 0);
         stateMachine.Transitions.Should().Equal();
 
         Thread.Sleep(TimeSpan.FromMilliseconds(100));
@@ -266,7 +314,7 @@ public partial class StateMachineTransitionTests
         stateMachine.CurrentState.Should().Be(UnitTestStateMachine.State.State0);
         stateMachine.OnEntryCounts.Should().Equal(1, 0, 0);
         stateMachine.OnExitCounts.Should().Equal(0, 0, 0);
-        stateMachine.TriggerCounts.Should().Equal(0, 0, 0, 0, 0);
+        stateMachine.TriggerCounts.Should().Equal(0, 0, 0, 0, 0, 0);
         stateMachine.Transitions.Should().Equal();
 
         Thread.Sleep(TimeSpan.FromMilliseconds(350));
@@ -274,7 +322,7 @@ public partial class StateMachineTransitionTests
         stateMachine.CurrentState.Should().Be(UnitTestStateMachine.State.State2);
         stateMachine.OnEntryCounts.Should().Equal(1, 0, 1);
         stateMachine.OnExitCounts.Should().Equal(1, 0, 0);
-        stateMachine.TriggerCounts.Should().Equal(0, 0, 0, 1, 0);
+        stateMachine.TriggerCounts.Should().Equal(0, 0, 0, 1, 0, 0);
         stateMachine.Transitions.Should().Equal("3: State0 -> State2");
     }
 
@@ -290,7 +338,7 @@ public partial class StateMachineTransitionTests
         stateMachine.CurrentState.Should().Be(UnitTestStateMachine.State.State0);
         stateMachine.OnEntryCounts.Should().Equal(1, 0, 0);
         stateMachine.OnExitCounts.Should().Equal(0, 0, 0);
-        stateMachine.TriggerCounts.Should().Equal(0, 0, 0, 0, 0);
+        stateMachine.TriggerCounts.Should().Equal(0, 0, 0, 0, 0, 0);
         stateMachine.Transitions.Should().Equal();
 
         Thread.Sleep(TimeSpan.FromMilliseconds(100));
@@ -298,7 +346,7 @@ public partial class StateMachineTransitionTests
         stateMachine.CurrentState.Should().Be(UnitTestStateMachine.State.State0);
         stateMachine.OnEntryCounts.Should().Equal(1, 0, 0);
         stateMachine.OnExitCounts.Should().Equal(0, 0, 0);
-        stateMachine.TriggerCounts.Should().Equal(0, 0, 0, 0, 0);
+        stateMachine.TriggerCounts.Should().Equal(0, 0, 0, 0, 0, 0);
         stateMachine.Transitions.Should().Equal();
 
         Thread.Sleep(TimeSpan.FromMilliseconds(250));
@@ -306,7 +354,7 @@ public partial class StateMachineTransitionTests
         stateMachine.CurrentState.Should().Be(UnitTestStateMachine.State.State0);
         stateMachine.OnEntryCounts.Should().Equal(1, 0, 0);
         stateMachine.OnExitCounts.Should().Equal(0, 0, 0);
-        stateMachine.TriggerCounts.Should().Equal(0, 0, 0, 0, 0);
+        stateMachine.TriggerCounts.Should().Equal(0, 0, 0, 0, 0, 0);
         stateMachine.Transitions.Should().Equal();
     }
 }

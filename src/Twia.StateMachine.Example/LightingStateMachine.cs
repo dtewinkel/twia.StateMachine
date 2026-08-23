@@ -35,7 +35,7 @@ public partial class LightingStateMachine
     [OnEntry("_lightSwitch.ToOff()")]
     [OnEntry("_lightSwitch.Dim(0)")]
     [Transition(nameof(ButtonPressed), nameof(ManualOn))]
-    [TransitionAfter("0:00:05", nameof(LightOff), Condition = "true")]
+    [TransitionAfter("PT5S", nameof(LightOff), Condition = "true")]
     [TransitionAfter("0:00:10", nameof(LightOff))]
     [State]
     private partial void ManualToOff();
@@ -48,7 +48,7 @@ public partial class LightingStateMachine
 
     [Transition(nameof(PresenceDetected), nameof(ManualOn))]
     [Transition(nameof(ButtonPressed), nameof(ManualToOff))]
-    [TransitionAfter("0:20:00", nameof(LightOff))]
+    [TransitionAfter("PT20M20.4S", nameof(LightOff))]
     [State]
     private partial void AutoManualToOff();
 

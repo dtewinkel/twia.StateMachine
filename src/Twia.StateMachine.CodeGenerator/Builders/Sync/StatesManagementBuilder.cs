@@ -126,7 +126,7 @@ public override bool AddPublicMethods()
             var hasExitTransactions = onExitTransitions.Count > 0;
 
             var triggerTransitions = state.Transitions
-                .Where(transition => transition.TransitionType == TransitionType.OnTrigger).ToList();
+                .Where(transition => transition.TransitionType is TransitionType.OnTrigger or TransitionType.Internal).ToList();
             var hasTriggerTransactions = triggerTransitions.Count > 0;
 
             var triggerlessTransitions = state.Transitions
@@ -199,12 +199,24 @@ public override bool AddPublicMethods()
                         _document.Indent++;
                         foreach (var transition in trigger.ToList())
                         {
-                            _document.WriteConditionActionAndTransition(transition, onExitCall,
-                                (document, declaration) =>
-                                {
-                                    document.WriteLine($"{_statesBuilder.EnterStateMethodName}({_statesBuilder.StateFullTypeName}.{declaration.TargetState}, \"Trigger: {trigger.Key}\");");
-                                }
-                            );
+                            switch (transition.TransitionType)
+                            {
+                                case TransitionType.OnTrigger:
+                                    _document.WriteConditionActionAndTransition(transition, onExitCall,
+                                        (document, declaration) =>
+                                        {
+                                            document.WriteLine($"{_statesBuilder.EnterStateMethodName}({_statesBuilder.StateFullTypeName}.{declaration.TargetState}, \"Trigger: {trigger.Key}\");");
+                                        }
+                                    );
+                                    break;
+
+                                case TransitionType.Internal:
+                                    _document.WriteConditionAndAction(transition);
+                                    break;
+
+                                default:
+                                    throw new InvalidOperationException($"Unexpected transition type: {transition.TransitionType}");
+                            }
                         }
                         _document.WriteLine("break;");
                         _document.Indent--;

@@ -1,4 +1,5 @@
 ﻿using System.CodeDom.Compiler;
+using System.Xml;
 using Twia.StateMachine.CodeGenerator.Declarations;
 
 namespace Twia.StateMachine.CodeGenerator.Builders.Sync;
@@ -54,12 +55,9 @@ public class AfterTransitionsBuilder : BuilderBase, ITriggersProvider
 
         _document.WriteLine($"private void {_startTimerMethodName}(string period, {_triggersBuilder.TriggerEnumTypeName} trigger)");
         _document.WriteLineBlockOpen();
-        _document.WriteLine("if (global::System.TimeSpan.TryParse(period, out var timeSpan))");
-        _document.WriteLineBlockOpen();
-        _document.WriteLine("var milliSeconds = global::System.Convert.ToInt32(timeSpan.TotalMilliseconds);");
-        _document.WriteLine($"var timer = new global::System.Threading.Timer({timerCallback}, trigger, milliSeconds, global::System.Threading.Timeout.Infinite);");
+        _document.WriteLine("var timeSpan = global::System.TimeSpan.Parse(period);");
+        _document.WriteLine($"var timer = new global::System.Threading.Timer({timerCallback}, trigger, timeSpan, global::System.Threading.Timeout.InfiniteTimeSpan);");
         _document.WriteLine($"{_timersBackingFieldName}.Add(timer);");
-        _document.WriteLineBlockClose();
         _document.WriteLineBlockClose();
         _document.WriteLineNoTabs();
         _document.WriteLine($"private void {timerCallback}(object? state)");
@@ -91,9 +89,29 @@ public class AfterTransitionsBuilder : BuilderBase, ITriggersProvider
         {
             foreach (var transition in transitions)
             {
+                var timeSpan = ParsePeriod(transition.Trigger);
+
                 _document.WriteLine(
-                    $"{_startTimerMethodName}(\"{transition.Trigger}\", {_triggersBuilder.TriggerEnumTypeName}.{ToFullAfterTriggerName(transition.Name)});");
+                    $"{_startTimerMethodName}(\"{timeSpan}\", {_triggersBuilder.TriggerEnumTypeName}.{ToFullAfterTriggerName(transition.Name)});");
             }
+        }
+    }
+
+
+    private static TimeSpan ParsePeriod(string trigger)
+    {
+        if (TimeSpan.TryParse(trigger, out var timeSpan))
+        {
+            return timeSpan;
+        }
+
+        try
+        {
+            return XmlConvert.ToTimeSpan(trigger);
+        }
+        catch (FormatException)
+        {
+            return TimeSpan.Zero;
         }
     }
 

@@ -86,14 +86,11 @@ public sealed class StateMachineIncrementalCodeGeneratorTests
                             public partial class UnitTestEmptyStateMachine
                             {
                                 [State]
-                                public partial void State1()
-                                {
-                                }
+                                public partial void State1();
 
                                 [State]
-                                public partial void State2()
-                                {
-                                }
+                                public partial void State2();
+
                             }
                             """;
 
@@ -115,23 +112,138 @@ public sealed class StateMachineIncrementalCodeGeneratorTests
                             [StateMachine]
                             public partial class UnitTestEmptyStateMachine
                             {
-                                [State, InitialState]
-                                public partial void State1()
-                                {
-                                }
+                                [InitialState]
+                                public partial void State1();
 
-                                [State, InitialState]
-                                public partial void State2()
-                                {
-                                }
+                                [InitialState]
+                                public partial void State2();
                             }
                             """;
 
         var diagnostics = DiagnosticResult
             .CompilerError("SMG0002")
-            .WithLocation(14, 25)
+            .WithLocation(12, 25)
             .WithArguments("State2", "State1");
         await _verifier.VerifyGeneratorAsyncWithOnlyDiagnostics([code], [diagnostics]);
+    }
+
+    [TestMethod]
+    public async Task Generator_NotExistingTriggers_GeneratesErrors()
+    {
+        const string code = """
+                            using Twia.StateMachine;
+
+                            namespace Twia.StateMachine.CodeGenerator.UnitTests;
+
+                            [StateMachine]
+                            public partial class UnitTestEmptyStateMachine
+                            {
+                                [InitialState]
+                                [Transition("Trigger1", "State2")]
+                                public partial void State1();
+
+                                [State]
+                                [InternalTransition("Trigger2", "Work()")]
+                                public partial void State2();
+                                
+                                public void Work() {}
+                            }
+                            """;
+
+        var diagnostics1 = DiagnosticResult
+            .CompilerError("SMG0010")
+            .WithLocation(10, 25)
+            .WithArguments("Trigger1", "State1");
+        var diagnostics2 = DiagnosticResult
+            .CompilerError("SMG0010")
+            .WithLocation(14, 25)
+            .WithArguments("Trigger2", "State2");
+        await _verifier.VerifyGeneratorAsyncWithOnlyDiagnostics([code], [diagnostics1, diagnostics2]);
+    }
+
+    [TestMethod]
+    public async Task Generator_NotExistingStates_GeneratesErrors()
+    {
+        const string code = """
+                            using Twia.StateMachine;
+
+                            namespace Twia.StateMachine.CodeGenerator.UnitTests;
+
+                            [StateMachine]
+                            public partial class UnitTestEmptyStateMachine
+                            {
+                                [InitialState]
+                                [Transition("Trigger1", "State4")]
+                                public partial void State1();
+
+                                [State]
+                                [TriggerlessTransition("State5")]
+                                public partial void State2();
+                            
+                                [State]
+                                [TransitionAfter("0:00:01", "State6")]
+                                public partial void State3();
+                                
+                                [Trigger]
+                                public partial void Trigger1();
+                                
+                                public void Work()
+                                {
+                                }
+                            }
+                            """;
+
+        var diagnostics1 = DiagnosticResult
+            .CompilerError("SMG0011")
+            .WithLocation(10, 25)
+            .WithArguments("State4", "State1");
+        var diagnostics2 = DiagnosticResult
+            .CompilerError("SMG0011")
+            .WithLocation(14, 25)
+            .WithArguments("State5", "State2");
+        var diagnostics3 = DiagnosticResult
+            .CompilerError("SMG0011")
+            .WithLocation(18, 25)
+            .WithArguments("State6", "State3");
+        await _verifier.VerifyGeneratorAsyncWithOnlyDiagnostics([code], [diagnostics1, diagnostics2, diagnostics3]);
+    }
+
+
+    [TestMethod]
+    public async Task Generator_InvalidPeriod_GeneratesErrors()
+    {
+        const string code = """
+                            using Twia.StateMachine;
+
+                            namespace Twia.StateMachine.CodeGenerator.UnitTests;
+
+                            [StateMachine]
+                            public partial class UnitTestEmptyStateMachine
+                            {
+                                [InitialState]
+                                [TransitionAfter("a", "State2")]
+                                public partial void State1();
+
+                                [State]
+                                [TransitionAfter("T1H", "State2")]
+                                [TransitionAfter("2 seconds", "State2")] 
+                                public partial void State2();
+                            }
+                            """;
+
+        var diagnostics1 = DiagnosticResult
+            .CompilerError("SMG0012")
+            .WithLocation(10, 25)
+            .WithArguments("a", "State1");
+        var diagnostics2 = DiagnosticResult
+            .CompilerError("SMG0012")
+            .WithLocation(15, 25)
+            .WithArguments("T1H", "State2");
+        var diagnostics3 = DiagnosticResult
+            .CompilerError("SMG0012")
+            .WithLocation(15, 25)
+            .WithArguments("2 seconds", "State2");
+        await _verifier.VerifyGeneratorAsyncWithOnlyDiagnostics([code], [diagnostics1, diagnostics2, diagnostics3]);
     }
 
     [TestMethod]
@@ -150,7 +262,7 @@ public sealed class StateMachineIncrementalCodeGeneratorTests
                                 {
                                 }
 
-                                [State, InitialState]
+                                [InitialState]
                                 public partial void State2()
                                 {
                                 }
@@ -184,7 +296,7 @@ public sealed class StateMachineIncrementalCodeGeneratorTests
                                 [Transition("Trigger1", "State1")]
                                 public partial void State3();
                                 
-                                [TransitionAfter("PT00:00:01", "State1")]
+                                [TransitionAfter("00:00:01", "State1")]
                                 public partial void State4();
 
                                 [InitialState]
@@ -234,7 +346,7 @@ public sealed class StateMachineIncrementalCodeGeneratorTests
                                 [Trigger, Transition("Trigger1", "State1")]
                                 public partial void State3();
                                 
-                                [Trigger, TransitionAfter("PT00:00:01", "State1")]
+                                [Trigger, TransitionAfter("00:00:01", "State1")]
                                 public partial void State4();
 
                                 [InitialState]
@@ -275,7 +387,7 @@ public sealed class StateMachineIncrementalCodeGeneratorTests
                             [StateMachine]
                             public partial class UnitTestEmptyStateMachine
                             {
-                                [State, InitialState]
+                                [InitialState]
                                 public void State1();
 
                                 [Trigger]
@@ -305,7 +417,7 @@ public sealed class StateMachineIncrementalCodeGeneratorTests
                             [StateMachine]
                             public partial class UnitTestEmptyStateMachine
                             {
-                                [State, InitialState]
+                                [InitialState]
                                 public partial bool State1();
 
                                 [Trigger]
@@ -336,7 +448,7 @@ public sealed class StateMachineIncrementalCodeGeneratorTests
                             [StateMachine]
                             public partial class UnitTestEmptyStateMachine
                             {
-                                [State, InitialState]
+                                [InitialState]
                                 public partial void State1(string name);
 
                                 [Trigger]

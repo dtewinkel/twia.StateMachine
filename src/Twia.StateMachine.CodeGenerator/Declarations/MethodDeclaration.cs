@@ -44,6 +44,10 @@ public sealed partial record MethodDeclaration : Declaration
                 case StateMachineAttributeNames.TriggerlessTransitionAttributeName:
                     Transitions.Add(new TriggerlessTransitionDeclaration(attributeData));
                     break;
+
+                case StateMachineAttributeNames.InternalTransitionAttributeName:
+                    Transitions.Add(new InternalTransitionDeclaration(attributeData));
+                    break;
             }
         }
 

@@ -23,6 +23,7 @@ internal partial class UnitTestEmptyStateMachine
     {
         __{{GeneratedId}}_Undefined = 0,
         ButtonPressed,
+        SensorOn,
         __{{GeneratedId}}_Entry
     }
 
@@ -78,6 +79,13 @@ internal partial class UnitTestEmptyStateMachine
         __{{GeneratedId}}_InvokeTrigger(__{{GeneratedId}}_Trigger.ButtonPressed);
     }
 
+    public partial void SensorOn()
+    {
+        __{{GeneratedId}}_AssertIsInitialized();
+
+        __{{GeneratedId}}_InvokeTrigger(__{{GeneratedId}}_Trigger.SensorOn);
+    }
+
     private void __{{GeneratedId}}_AssertIsInitialized()
     {
         if (__{{GeneratedId}}_CurrentState == __{{GeneratedId}}_StateUndefined)
@@ -127,6 +135,19 @@ internal partial class UnitTestEmptyStateMachine
                     CanTransition = false;
 
                     __{{GeneratedId}}_EnterState(UnitTestEmptyStateMachine.State.On, "Trigger: ButtonPressed");
+                }
+                break;
+
+            case __{{GeneratedId}}_Trigger.SensorOn:
+                if (CanTransitionToOn == true)
+                {
+                    CanTransitionToOn = false;
+
+                    __{{GeneratedId}}_EnterState(UnitTestEmptyStateMachine.State.On, "Trigger: SensorOn");
+                }
+                if (CanTransitionInternal == true)
+                {
+                    CanTransitionInternal = false;
                 }
                 break;
         }

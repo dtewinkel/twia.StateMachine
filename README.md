@@ -165,6 +165,12 @@ public partial class MyStateMachine
 
 ### Transitions
 
+Transition brings the state machine from one state to another, or trigger actions internal in the state. 
+
+#### Normal transitions
+
+A normal transition is defined by the `Transition` attribute.
+
 A transition is triggered by a given trigger and will bring the state machine to the target state.
 
 A transition may have a guard condition that must evaluate to true for the transition to activate.
@@ -183,11 +189,32 @@ public partial class MyStateMachine
 }
 ```
 
-A transition may be triggerless. In that case the name of the trigger must be set to null.
-
 The example shows that, when in state `Running`, on reception of the trigger `Stop` the state should transition to the state `Stopped`.
 
-:warning: The `Transition` attribute can only be used on methods that also have the `State` or `InitialState` attribute.
+#### Triggerless transitions
+
+A transition may be triggerless. In that case the `TriggerlessTransition` attribute must be used.
+
+A transition is not triggered, but executes once the state is entered and will bring the state machine to the target state.
+
+A transition may have a guard condition that must evaluate to true for the transition to activate.
+
+A transition may have an action that is executed when the transition executes.
+
+```csharp
+[StateMachine]
+public partial class MyStateMachine
+{
+    [State]
+    [TriggerlessTransition(nameof(Stopped))]
+    [OnEntry("_engine.Stop()")]
+    private partial void Stopping();
+}
+```
+
+The example shows that, when in state `Stopping`, on completion of the entry action, the state should transition to the state `Stopped`.
+
+:warning: The `Transition` and `TriggerlessTransition` attributes can only be used on methods that also have the `State` or `InitialState` attribute.
 
 #### Guard conditions
 
@@ -244,9 +271,10 @@ Entry and Exit actions cal also define a guard condition.
 
 Internal transitions have a trigger, and an actions and can have a guard condition.
 
-Internal after transitions have a time interval, an action and can have a guard condition and a initial delay.
+Internal after transitions have a delay, an action and can have a guard condition and a initial delay.
+Internal after every transitions have an interval, an action and can have a guard condition and a initial delay.
 
-Do activities are started once the state is entered and all `OnEntry` actions have completed. They run in a background task until the state is exited.
+Do activities are started once the state is entered and all `OnEntry` actions have completed. They run in a background task until they finish or the state is exited.
 
 ```csharp
 [StateMachine]
@@ -261,7 +289,8 @@ public partial class MyStateMachine
     [OnExit("_engine.Stop()")]
     [Transition(nameof(Stop), nameof(Stopped))]
     [InternalTransition(nameof(Run), "_engine.Run()")]
-    [InternalTransitionAfter("0:00:05", "_engine.CheckTemperature()")]
+    [InternalAfter("0:00:05", "_engine.CheckTemperature()")]
+    [InternalAfterEvery("0:00:05", "_engine.CheckTemperature()")]
     [Do("_engine.Run()")]
     [TransitionAfter("1:00:00", nameof(Stopped))]
     private partial void Running();

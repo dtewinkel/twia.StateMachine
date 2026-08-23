@@ -1,4 +1,5 @@
-﻿using Microsoft.CodeAnalysis;
+﻿using System.Xml;
+using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Twia.StateMachine.CodeGenerator.Declarations;
 
@@ -38,7 +39,7 @@ public class BaseValidator
         foreach (var state in states)
         {
             var transitions =
-                state.Transitions.Where(transition => transition.TransitionType is TransitionType.OnTrigger or TransitionType.AfterDelay);
+                state.Transitions.Where(transition => transition.TransitionType is TransitionType.OnTrigger or TransitionType.AfterDelay or TransitionType.Triggerless);
             foreach (var transitionDeclaration in transitions)
             {
                 var targetState = transitionDeclaration.TargetState;
@@ -66,7 +67,7 @@ public class BaseValidator
         foreach (var state in states)
         {
             var transitions =
-                state.Transitions.Where(transition => transition.TransitionType == TransitionType.OnTrigger);
+                state.Transitions.Where(transition => transition.TransitionType is TransitionType.OnTrigger or TransitionType.Internal);
             foreach (var transitionDeclaration in transitions)
             {
                 var trigger = transitionDeclaration.Trigger;
@@ -93,16 +94,30 @@ public class BaseValidator
             {
                 var trigger = transitionDeclaration.Trigger;
 
-                
-                if (!TimeSpan.TryParse(trigger, out _))
+                if (!ValidatePeriod(trigger))
                 {
                     context.ReportDiagnostic(StateMachineGeneratorDiagnostics.TimeSpanMustBeValid((MethodDeclarationSyntax)state.Node, trigger));
-                    success = false;
                 }
             }
         }
 
         return success;
+    }
+
+    private static bool ValidatePeriod(string trigger)
+    {
+        if (!TimeSpan.TryParse(trigger, out _))
+        {
+            try
+            {
+                _ = XmlConvert.ToTimeSpan(trigger);
+            }
+            catch (FormatException)
+            {
+                return false;
+            }
+        }
+        return true;
     }
 
     protected virtual bool DeclarationIsPartial(SourceProductionContext context, StateMachineDeclaration declaration)
