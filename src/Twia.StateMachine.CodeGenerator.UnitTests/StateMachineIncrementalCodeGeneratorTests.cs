@@ -80,7 +80,7 @@ public sealed class StateMachineIncrementalCodeGeneratorTests
 
         var diagnostics = DiagnosticResult
             .CompilerError("SMG0001")
-            .WithLocation(6, 14)
+            .WithLocation(11, 14)
             .WithArguments("UnitTestEmptyStateMachine");
         await _verifier.VerifyGeneratorAsyncWithOnlyDiagnostics([code], [diagnostics]);
     }
@@ -93,7 +93,7 @@ public sealed class StateMachineIncrementalCodeGeneratorTests
                             * Name: No Initial State
                             * Output: None
                             * Diagnostics:
-                            * - SMG0003, 6, 20, "UnitTestEmptyStateMachine"
+                            * - SMG0003, 13, 20, "UnitTestEmptyStateMachine"
                             ***/
                             
                             using Twia.StateMachine;
@@ -114,7 +114,7 @@ public sealed class StateMachineIncrementalCodeGeneratorTests
 
         var diagnostics = DiagnosticResult
             .CompilerError("SMG0003")
-            .WithLocation(6, 22)
+            .WithLocation(13, 22)
             .WithArguments("UnitTestEmptyStateMachine");
         await _verifier.VerifyGeneratorAsyncWithOnlyDiagnostics([code], [diagnostics]);
     }
@@ -127,7 +127,7 @@ public sealed class StateMachineIncrementalCodeGeneratorTests
                             * Name: Multiple Initial States 
                             * Output: None
                             * Diagnostics:
-                            * - SMG0002, 12, 25, "State2", "State1"
+                            * - SMG0002, 19, 25, "State2", "State1"
                             ***/
                             
                             using Twia.StateMachine;
@@ -147,7 +147,7 @@ public sealed class StateMachineIncrementalCodeGeneratorTests
 
         var diagnostics = DiagnosticResult
             .CompilerError("SMG0002")
-            .WithLocation(12, 25)
+            .WithLocation(19, 25)
             .WithArguments("State2", "State1");
         await _verifier.VerifyGeneratorAsyncWithOnlyDiagnostics([code], [diagnostics]);
     }
@@ -160,8 +160,8 @@ public sealed class StateMachineIncrementalCodeGeneratorTests
                             * Name: Not existing Triggers
                             * Output: None
                             * Diagnostics:
-                            * - SMG0010, 10, 25, "Trigger1", "State1"
-                            * - SMG0010, 14, 25, "Trigger2", "State2"
+                            * - SMG0010, 18, 25, "Trigger1", "State1"
+                            * - SMG0010, 22, 25, "Trigger2", "State2"
                             ***/
                             
                             using Twia.StateMachine;
@@ -185,11 +185,11 @@ public sealed class StateMachineIncrementalCodeGeneratorTests
 
         var diagnostics1 = DiagnosticResult
             .CompilerError("SMG0010")
-            .WithLocation(10, 25)
+            .WithLocation(18, 25)
             .WithArguments("Trigger1", "State1");
         var diagnostics2 = DiagnosticResult
             .CompilerError("SMG0010")
-            .WithLocation(14, 25)
+            .WithLocation(22, 25)
             .WithArguments("Trigger2", "State2");
         await _verifier.VerifyGeneratorAsyncWithOnlyDiagnostics([code], [diagnostics1, diagnostics2]);
     }
@@ -202,9 +202,9 @@ public sealed class StateMachineIncrementalCodeGeneratorTests
                             * Name: Not existing States
                             * Output: None
                             * Diagnostics:
-                            * - SMG0011, 10, 25, "State4", "State1"
-                            * - SMG0011, 14, 25, "State5", "State2"
-                            * - SMG0011, 18, 25, "State6", "State3"
+                            * - SMG0011, 19, 25, "State4", "State1"
+                            * - SMG0011, 23, 25, "State5", "State2"
+                            * - SMG0011, 27, 25, "State6", "State3"
                             ***/
                             
                             using Twia.StateMachine;
@@ -237,15 +237,15 @@ public sealed class StateMachineIncrementalCodeGeneratorTests
 
         var diagnostics1 = DiagnosticResult
             .CompilerError("SMG0011")
-            .WithLocation(10, 25)
+            .WithLocation(19, 25)
             .WithArguments("State4", "State1");
         var diagnostics2 = DiagnosticResult
             .CompilerError("SMG0011")
-            .WithLocation(14, 25)
+            .WithLocation(23, 25)
             .WithArguments("State5", "State2");
         var diagnostics3 = DiagnosticResult
             .CompilerError("SMG0011")
-            .WithLocation(18, 25)
+            .WithLocation(27, 25)
             .WithArguments("State6", "State3");
         await _verifier.VerifyGeneratorAsyncWithOnlyDiagnostics([code], [diagnostics1, diagnostics2, diagnostics3]);
     }
@@ -259,9 +259,9 @@ public sealed class StateMachineIncrementalCodeGeneratorTests
                             * Name: Invalid Period
                             * Output: None
                             * Diagnostics:
-                            * - SMG0012, 10, 25, "a", "State1"
-                            * - SMG0012, 15, 25, "T1H", "State2"
-                            * - SMG0012, 15, 25, "2 seconds", "State2"
+                            * - SMG0012, 19, 25, "a", "State1"
+                            * - SMG0012, 24, 25, "T1H", "State2"
+                            * - SMG0012, 24, 25, "2 seconds", "State2"
                             ***/
                             
                             using Twia.StateMachine;
@@ -284,15 +284,15 @@ public sealed class StateMachineIncrementalCodeGeneratorTests
 
         var diagnostics1 = DiagnosticResult
             .CompilerError("SMG0012")
-            .WithLocation(10, 25)
+            .WithLocation(19, 25)
             .WithArguments("a", "State1");
         var diagnostics2 = DiagnosticResult
             .CompilerError("SMG0012")
-            .WithLocation(15, 25)
+            .WithLocation(24, 25)
             .WithArguments("T1H", "State2");
         var diagnostics3 = DiagnosticResult
             .CompilerError("SMG0012")
-            .WithLocation(15, 25)
+            .WithLocation(24, 25)
             .WithArguments("2 seconds", "State2");
         await _verifier.VerifyGeneratorAsyncWithOnlyDiagnostics([code], [diagnostics1, diagnostics2, diagnostics3]);
     }
@@ -305,7 +305,7 @@ public sealed class StateMachineIncrementalCodeGeneratorTests
                             * Name: Method Is State And Trigger
                             * Output: None
                             * Diagnostics:
-                            * - SMG0004, 9, 25, "State1"
+                            * - SMG0004, 16, 25, "State1"
                             ***/
 
                             using Twia.StateMachine;
@@ -329,7 +329,7 @@ public sealed class StateMachineIncrementalCodeGeneratorTests
 
         var diagnostics = DiagnosticResult
             .CompilerError("SMG0004")
-            .WithLocation(9, 25)
+            .WithLocation(16, 25)
             .WithArguments("State1");
         await _verifier.VerifyGeneratorAsyncWithOnlyDiagnostics([code], [diagnostics]);
     }
@@ -342,10 +342,10 @@ public sealed class StateMachineIncrementalCodeGeneratorTests
                             * Name: Method Is Not State But Has Transition Attributes
                             * Output: None
                             * Diagnostics:
-                            * - SMG0005, 9, 25, "State1"
-                            * - SMG0005, 12, 25, "State2"
-                            * - SMG0005, 15, 25, "State3"
-                            * - SMG0005, 18, 25, "State4"
+                            * - SMG0005, 19, 25, "State1"
+                            * - SMG0005, 22, 25, "State2"
+                            * - SMG0005, 25, 25, "State3"
+                            * - SMG0005, 28, 25, "State4"
                             ***/
 
                             using Twia.StateMachine;
@@ -377,19 +377,19 @@ public sealed class StateMachineIncrementalCodeGeneratorTests
 
         var diagnostics1 = DiagnosticResult
             .CompilerError("SMG0005")
-            .WithLocation(9, 25)
+            .WithLocation(19, 25)
             .WithArguments("State1");
         var diagnostics2 = DiagnosticResult
             .CompilerError("SMG0005")
-            .WithLocation(12, 25)
+            .WithLocation(22, 25)
             .WithArguments("State2");
         var diagnostics3 = DiagnosticResult
             .CompilerError("SMG0005")
-            .WithLocation(15, 25)
+            .WithLocation(25, 25)
             .WithArguments("State3");
         var diagnostics4 = DiagnosticResult
             .CompilerError("SMG0005")
-            .WithLocation(18, 25)
+            .WithLocation(28, 25)
             .WithArguments("State4");
         await _verifier.VerifyGeneratorAsyncWithOnlyDiagnostics([code], [diagnostics1, diagnostics2, diagnostics3, diagnostics4]);
     }
@@ -402,10 +402,10 @@ public sealed class StateMachineIncrementalCodeGeneratorTests
                             * Name: Method Is Trigger But Has Transition Attributes
                             * Output: None
                             * Diagnostics:
-                            * - SMG0006, 9, 25, "State1"
-                            * - SMG0006, 12, 25, "State2"
-                            * - SMG0006, 15, 25, "State3"
-                            * - SMG0006, 18, 25, "State4"
+                            * - SMG0006, 19, 25, "State1"
+                            * - SMG0006, 22, 25, "State2"
+                            * - SMG0006, 25, 25, "State3"
+                            * - SMG0006, 28, 25, "State4"
                             ***/
 
                             using Twia.StateMachine;
@@ -437,19 +437,19 @@ public sealed class StateMachineIncrementalCodeGeneratorTests
 
         var diagnostics1 = DiagnosticResult
             .CompilerError("SMG0006")
-            .WithLocation(9, 25)
+            .WithLocation(19, 25)
             .WithArguments("State1");
         var diagnostics2 = DiagnosticResult
             .CompilerError("SMG0006")
-            .WithLocation(12, 25)
+            .WithLocation(22, 25)
             .WithArguments("State2");
         var diagnostics3 = DiagnosticResult
             .CompilerError("SMG0006")
-            .WithLocation(15, 25)
+            .WithLocation(25, 25)
             .WithArguments("State3");
         var diagnostics4 = DiagnosticResult
             .CompilerError("SMG0006")
-            .WithLocation(18, 25)
+            .WithLocation(28, 25)
             .WithArguments("State4");
         await _verifier.VerifyGeneratorAsyncWithOnlyDiagnostics([code], [diagnostics1, diagnostics2, diagnostics3, diagnostics4]);
     }
@@ -462,8 +462,8 @@ public sealed class StateMachineIncrementalCodeGeneratorTests
                             * Name: Trigger Or State Method Not Partial
                             * Output: None
                             * Diagnostics:
-                            * - SMG0007, 9, 17, "State1"
-                            * - SMG0007, 12, 17, "Trigger1"
+                            * - SMG0007, 17, 17, "State1"
+                            * - SMG0007, 20, 17, "Trigger1"
                             ***/
 
                             using Twia.StateMachine;
@@ -483,11 +483,11 @@ public sealed class StateMachineIncrementalCodeGeneratorTests
 
         var diagnostics1 = DiagnosticResult
             .CompilerError("SMG0007")
-            .WithLocation(9, 17)
+            .WithLocation(17, 17)
             .WithArguments("State1");
         var diagnostics2 = DiagnosticResult
             .CompilerError("SMG0007")
-            .WithLocation(12, 17)
+            .WithLocation(20, 17)
             .WithArguments("Trigger1");
         await _verifier.VerifyGeneratorAsyncWithOnlyDiagnostics([code], [diagnostics1, diagnostics2]);
     }
@@ -500,8 +500,8 @@ public sealed class StateMachineIncrementalCodeGeneratorTests
                             * Name: Trigger Or State Method Not Void
                             * Output: None
                             * Diagnostics:
-                            * - SMG0008, 9, 25, "State1"
-                            * - SMG0008, 12, 25, "Trigger1Async"
+                            * - SMG0008, 17, 25, "State1"
+                            * - SMG0008, 20, 25, "Trigger1Async"
                             ***/
 
                             using Twia.StateMachine;
@@ -521,11 +521,11 @@ public sealed class StateMachineIncrementalCodeGeneratorTests
 
         var diagnostics1 = DiagnosticResult
             .CompilerError("SMG0008")
-            .WithLocation(9, 25)
+            .WithLocation(17, 25)
             .WithArguments("State1");
         var diagnostics2 = DiagnosticResult
             .CompilerError("SMG0008")
-            .WithLocation(12, 25)
+            .WithLocation(20, 25)
             .WithArguments("Trigger1Async");
         await _verifier.VerifyGeneratorAsyncWithOnlyDiagnostics([code], [diagnostics1, diagnostics2]);
     }
@@ -538,8 +538,8 @@ public sealed class StateMachineIncrementalCodeGeneratorTests
                             * Name: Trigger Or State With Parameters
                             * Output: None
                             * Diagnostics:
-                            * - SMG0009, 10, 25, "State1"
-                            * - SMG0009, 13, 25, "Trigger1Async"
+                            * - SMG0009, 18, 25, "State1"
+                            * - SMG0009, 21, 25, "Trigger1Async"
                             ***/
 
                             using Twia.StateMachine;
@@ -560,11 +560,11 @@ public sealed class StateMachineIncrementalCodeGeneratorTests
 
         var diagnostics1 = DiagnosticResult
             .CompilerError("SMG0009")
-            .WithLocation(10, 25)
+            .WithLocation(18, 25)
             .WithArguments("State1");
         var diagnostics2 = DiagnosticResult
             .CompilerError("SMG0009")
-            .WithLocation(13, 25)
+            .WithLocation(21, 25)
             .WithArguments("Trigger1Async");
         await _verifier.VerifyGeneratorAsyncWithOnlyDiagnostics([code], [diagnostics1, diagnostics2]);
     }
@@ -577,11 +577,11 @@ public sealed class StateMachineIncrementalCodeGeneratorTests
                             * Name: With Mix Of Errors
                             * Output: None
                             * Diagnostics:
-                            * - SMG0001, 6, 14, "UnitTestEmptyStateMachine"
-                            * - SMG0003, 6, 14, "UnitTestEmptyStateMachine"
-                            * - SMG0006, 9, 25, "State1"
-                            * - SMG0005, 12, 25, "State2"
-                            * - SMG0007, 15, 17, "State3"
+                            * - SMG0001, 17, 14, "UnitTestEmptyStateMachine"
+                            * - SMG0003, 17, 14, "UnitTestEmptyStateMachine"
+                            * - SMG0006, 20, 25, "State1"
+                            * - SMG0005, 23, 25, "State2"
+                            * - SMG0007, 26, 17, "State3"
                             ***/
 
                             using Twia.StateMachine;
@@ -604,23 +604,23 @@ public sealed class StateMachineIncrementalCodeGeneratorTests
 
         var diagnostics1 = DiagnosticResult
             .CompilerError("SMG0001")
-            .WithLocation(6, 14)
+            .WithLocation(17, 14)
             .WithArguments("UnitTestEmptyStateMachine");
         var diagnostics2 = DiagnosticResult
             .CompilerError("SMG0003")
-            .WithLocation(6, 14)
+            .WithLocation(17, 14)
             .WithArguments("UnitTestEmptyStateMachine");
         var diagnostics3 = DiagnosticResult
             .CompilerError("SMG0006")
-            .WithLocation(9, 25)
+            .WithLocation(20, 25)
             .WithArguments("State1");
         var diagnostics4 = DiagnosticResult
             .CompilerError("SMG0005")
-            .WithLocation(12, 25)
+            .WithLocation(23, 25)
             .WithArguments("State2");
         var diagnostics5 = DiagnosticResult
             .CompilerError("SMG0007")
-            .WithLocation(15, 17)
+            .WithLocation(26, 17)
             .WithArguments("State3");
         await _verifier.VerifyGeneratorAsyncWithOnlyDiagnostics([code], [diagnostics1, diagnostics2, diagnostics3, diagnostics4, diagnostics5]);
     }
