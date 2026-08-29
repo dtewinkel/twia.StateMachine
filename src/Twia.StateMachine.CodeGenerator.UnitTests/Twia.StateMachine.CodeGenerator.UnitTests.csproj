@@ -50,4 +50,8 @@
     </None>
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="TestFiles\Sync\InitialState\" />
+  </ItemGroup>
+
 </Project>

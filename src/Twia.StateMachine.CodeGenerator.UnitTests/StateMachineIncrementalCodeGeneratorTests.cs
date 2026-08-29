@@ -9,23 +9,24 @@ namespace Twia.StateMachine.CodeGenerator.UnitTests;
 [TestClass]
 public sealed class StateMachineIncrementalCodeGeneratorTests
 {
-    private readonly IncrementalGeneratorVerifier<StateMachineIncrementalCodeGenerator> _verifier = new(
-        "Twia.StateMachine.CodeGenerator.UnitTests.", 
-        "_StateMachine.g.cs",
-        // Suppress all diagnostics from the compiler itself. We only want to test the generator diagnostics.
-        // Risk: This might hide useful information if the input sources are invalid.
-        CompilerDiagnostics.None);
+    private readonly TestContext _testContext;
 
-    public StateMachineIncrementalCodeGeneratorTests()
+    private readonly IncrementalGeneratorVerifier<StateMachineIncrementalCodeGenerator> _verifier = new(typeof(StateMachineIncrementalCodeGeneratorTests));
+
+    public StateMachineIncrementalCodeGeneratorTests(TestContext testContext)
     {
+        _testContext = testContext;
         _verifier.AddAdditionalFileReferences("Twia.StateMachine.dll");
-        _verifier.DisabledDiagnostics.Add("CS0759");
     }
 
     [TestMethod]
     public async Task Generator_WithNoAttribute_GeneratesNoCode()
     {
         const string code = """
+            /***
+            * Name: Partial class without StateMachine attribute
+            * Output: None
+            ***/
             namespace Twia.StateMachine.CodeGenerator.UnitTests;
             
             public partial class UnitTestEmptyStateMachine
@@ -40,6 +41,11 @@ public sealed class StateMachineIncrementalCodeGeneratorTests
     public async Task Generator_OnRecordType_GeneratesNoCode()
     {
         const string code = """
+                            /***
+                            * Name: StateMachine attribute On Record Type
+                            * Output: None
+                            ***/
+                            
                             using Twia.StateMachine;
 
                             namespace Twia.StateMachine.CodeGenerator.UnitTests;
@@ -57,6 +63,11 @@ public sealed class StateMachineIncrementalCodeGeneratorTests
     public async Task Generator_NotPartialClass_GeneratesNoCode()
     {
         const string code = """
+                            /***
+                            * Name: StateMachine attribute not partial class
+                            * Output: None
+                            ***/
+                            
                             using Twia.StateMachine;
                             
                             namespace Twia.StateMachine.CodeGenerator.UnitTests;
@@ -75,9 +86,16 @@ public sealed class StateMachineIncrementalCodeGeneratorTests
     }
 
     [TestMethod]
-    public async Task Generator_NoInitialStates_GeneratesNoCode()
+    public async Task Generator_NoInitialState_GeneratesNoCode()
     {
         const string code = """
+                            /***
+                            * Name: No Initial State
+                            * Output: None
+                            * Diagnostics:
+                            * - SMG0003, 6, 20, "UnitTestEmptyStateMachine"
+                            ***/
+                            
                             using Twia.StateMachine;
 
                             namespace Twia.StateMachine.CodeGenerator.UnitTests;
@@ -105,6 +123,13 @@ public sealed class StateMachineIncrementalCodeGeneratorTests
     public async Task Generator_MultipleInitialStates_GeneratesNoCode()
     {
         const string code = """
+                            /***
+                            * Name: Multiple Initial States 
+                            * Output: None
+                            * Diagnostics:
+                            * - SMG0002, 12, 25, "State2", "State1"
+                            ***/
+                            
                             using Twia.StateMachine;
 
                             namespace Twia.StateMachine.CodeGenerator.UnitTests;
@@ -131,6 +156,14 @@ public sealed class StateMachineIncrementalCodeGeneratorTests
     public async Task Generator_NotExistingTriggers_GeneratesErrors()
     {
         const string code = """
+                            /***
+                            * Name: Not existing Triggers
+                            * Output: None
+                            * Diagnostics:
+                            * - SMG0010, 10, 25, "Trigger1", "State1"
+                            * - SMG0010, 14, 25, "Trigger2", "State2"
+                            ***/
+                            
                             using Twia.StateMachine;
 
                             namespace Twia.StateMachine.CodeGenerator.UnitTests;
@@ -165,6 +198,15 @@ public sealed class StateMachineIncrementalCodeGeneratorTests
     public async Task Generator_NotExistingStates_GeneratesErrors()
     {
         const string code = """
+                            /***
+                            * Name: Not existing States
+                            * Output: None
+                            * Diagnostics:
+                            * - SMG0011, 10, 25, "State4", "State1"
+                            * - SMG0011, 14, 25, "State5", "State2"
+                            * - SMG0011, 18, 25, "State6", "State3"
+                            ***/
+                            
                             using Twia.StateMachine;
 
                             namespace Twia.StateMachine.CodeGenerator.UnitTests;
@@ -213,6 +255,15 @@ public sealed class StateMachineIncrementalCodeGeneratorTests
     public async Task Generator_InvalidPeriod_GeneratesErrors()
     {
         const string code = """
+                            /***
+                            * Name: Invalid Period
+                            * Output: None
+                            * Diagnostics:
+                            * - SMG0012, 10, 25, "a", "State1"
+                            * - SMG0012, 15, 25, "T1H", "State2"
+                            * - SMG0012, 15, 25, "2 seconds", "State2"
+                            ***/
+                            
                             using Twia.StateMachine;
 
                             namespace Twia.StateMachine.CodeGenerator.UnitTests;
@@ -250,6 +301,13 @@ public sealed class StateMachineIncrementalCodeGeneratorTests
     public async Task Generator_MethodIsStateAndTrigger_GeneratesNoCode()
     {
         const string code = """
+                            /***
+                            * Name: Method Is State And Trigger
+                            * Output: None
+                            * Diagnostics:
+                            * - SMG0004, 9, 25, "State1"
+                            ***/
+
                             using Twia.StateMachine;
 
                             namespace Twia.StateMachine.CodeGenerator.UnitTests;
@@ -280,6 +338,16 @@ public sealed class StateMachineIncrementalCodeGeneratorTests
     public async Task Generator_MethodIsNotStateButHasTransitionAttributes_GeneratesNoCode()
     {
         const string code = """
+                            /***
+                            * Name: Method Is Not State But Has Transition Attributes
+                            * Output: None
+                            * Diagnostics:
+                            * - SMG0005, 9, 25, "State1"
+                            * - SMG0005, 12, 25, "State2"
+                            * - SMG0005, 15, 25, "State3"
+                            * - SMG0005, 18, 25, "State4"
+                            ***/
+
                             using Twia.StateMachine;
 
                             namespace Twia.StateMachine.CodeGenerator.UnitTests;
@@ -330,6 +398,16 @@ public sealed class StateMachineIncrementalCodeGeneratorTests
     public async Task Generator_MethodIsTriggerButHasTransitionAttributes_GeneratesNoCode()
     {
         const string code = """
+                            /***
+                            * Name: Method Is Trigger But Has Transition Attributes
+                            * Output: None
+                            * Diagnostics:
+                            * - SMG0006, 9, 25, "State1"
+                            * - SMG0006, 12, 25, "State2"
+                            * - SMG0006, 15, 25, "State3"
+                            * - SMG0006, 18, 25, "State4"
+                            ***/
+
                             using Twia.StateMachine;
 
                             namespace Twia.StateMachine.CodeGenerator.UnitTests;
@@ -380,6 +458,14 @@ public sealed class StateMachineIncrementalCodeGeneratorTests
     public async Task Generator_TriggerOrStateMethodNotPartial_GeneratesNoCode()
     {
         const string code = """
+                            /***
+                            * Name: Trigger Or State Method Not Partial
+                            * Output: None
+                            * Diagnostics:
+                            * - SMG0007, 9, 17, "State1"
+                            * - SMG0007, 12, 17, "Trigger1"
+                            ***/
+
                             using Twia.StateMachine;
 
                             namespace Twia.StateMachine.CodeGenerator.UnitTests;
@@ -410,6 +496,14 @@ public sealed class StateMachineIncrementalCodeGeneratorTests
     public async Task Generator_TriggerOrStateMethodNotVoid_GeneratesNoCode()
     {
         const string code = """
+                            /***
+                            * Name: Trigger Or State Method Not Void
+                            * Output: None
+                            * Diagnostics:
+                            * - SMG0008, 9, 25, "State1"
+                            * - SMG0008, 12, 25, "Trigger1Async"
+                            ***/
+
                             using Twia.StateMachine;
 
                             namespace Twia.StateMachine.CodeGenerator.UnitTests;
@@ -440,6 +534,14 @@ public sealed class StateMachineIncrementalCodeGeneratorTests
     public async Task Generator_TriggerOrStateWithParameters_GeneratesNoCode()
     {
         const string code = """
+                            /***
+                            * Name: Trigger Or State With Parameters
+                            * Output: None
+                            * Diagnostics:
+                            * - SMG0009, 10, 25, "State1"
+                            * - SMG0009, 13, 25, "Trigger1Async"
+                            ***/
+
                             using Twia.StateMachine;
                             using System.Threading;
 
@@ -471,6 +573,17 @@ public sealed class StateMachineIncrementalCodeGeneratorTests
     public async Task Generator_WithMixOfErrors_ReportsThemAll()
     {
         const string code = """
+                            /***
+                            * Name: With Mix Of Errors
+                            * Output: None
+                            * Diagnostics:
+                            * - SMG0001, 6, 14, "UnitTestEmptyStateMachine"
+                            * - SMG0003, 6, 14, "UnitTestEmptyStateMachine"
+                            * - SMG0006, 9, 25, "State1"
+                            * - SMG0005, 12, 25, "State2"
+                            * - SMG0007, 15, 17, "State3"
+                            ***/
+
                             using Twia.StateMachine;
 
                             namespace Twia.StateMachine.CodeGenerator.UnitTests;
@@ -512,8 +625,6 @@ public sealed class StateMachineIncrementalCodeGeneratorTests
         await _verifier.VerifyGeneratorAsyncWithOnlyDiagnostics([code], [diagnostics1, diagnostics2, diagnostics3, diagnostics4, diagnostics5]);
     }
 
-    public TestContext TestContext { get; set; }
-
     [TestMethod(DisplayName = "GenerateSyncCode")]
     [DataRow("WithAttributes", DisplayName = "WithAttributes")]
     [DataRow("WithFullAttributeNames", DisplayName = "WithFullAttributeNames")]
@@ -524,8 +635,8 @@ public sealed class StateMachineIncrementalCodeGeneratorTests
     [DataRow("Observable", DisplayName = "Observable")]
     public async Task Generator_GeneratesSyncCode(string testDataName)
     {
-        var code = await File.ReadAllTextAsync($"TestFiles/sync/{testDataName}.cs", TestContext.CancellationToken);
-        var expectedCode = await File.ReadAllTextAsync($"TestFiles/sync/{testDataName}.e.cs", TestContext.CancellationToken);
+        var code = await File.ReadAllTextAsync($"TestFiles/sync/{testDataName}.cs", _testContext.CancellationToken);
+        var expectedCode = await File.ReadAllTextAsync($"TestFiles/sync/{testDataName}.e.cs", _testContext.CancellationToken);
 #if SNAPSHOTS
         _verifier.OutputFile = Path.Join(Path.GetTempPath(), $"{testDataName}.g.cs");
 #endif

@@ -66,6 +66,15 @@ internal class IncrementalGeneratorVerifier<TGenerator> : CSharpSourceGeneratorT
     private readonly List<ISourceGeneratorVerificationPreparer> _verificationPreparers = [new ReplaceRandomPartsPreparer()];
     private readonly List<Document> _generatorGeneratedSources = [];
 
+    public IncrementalGeneratorVerifier(Type testClassType) : this(
+        testClassType.GetNamespacePrefix(),
+        "_StateMachine.g.cs",
+        // Suppress all diagnostics from the compiler itself. We only want to test the generator diagnostics.
+        // This might hide useful information if the input sources are invalid.
+        CompilerDiagnostics.None)
+    {
+    }
+
     public IncrementalGeneratorVerifier(string generatedSourcesPrefix, string generatedSourcesSuffix, CompilerDiagnostics compilerDiagnostics)
     {
         _generatedSourcesPrefix = generatedSourcesPrefix;
