@@ -41,17 +41,20 @@
 
   <ItemGroup>
     <None Include="App.config" />
+    <None Include="TestFiles\Sync\StateMachineAttribute\NotPartialClass.cs" />
+    <None Include="TestFiles\Sync\StateMachineAttribute\OnRecordType.cs" />
+    <None Include="TestFiles\Sync\TransitionAfterAttribute\InvalidPeriod.cs" />
   </ItemGroup>
 
   <ItemGroup>
-    <Compile Remove="TestFiles\Sync\*.cs" />
-    <None Include="TestFiles\Sync\*.cs">
+    <Compile Remove="TestFiles\Sync\**\*.cs" />
+    <None Include="TestFiles\Sync\**\*.cs">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="TestFiles\Sync\InitialState\" />
+    <Folder Include="TestFiles\Sync\TriggerAttribute\" />
   </ItemGroup>
 
 </Project>

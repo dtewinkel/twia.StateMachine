@@ -1,4 +1,9 @@
-﻿using Twia.StateMachine;
+﻿/***
+ * Name: StateMachine with only states and no triggers
+ * Output: Source
+ ***/
+
+using Twia.StateMachine;
 
 namespace Twia.StateMachine.CodeGenerator.UnitTests;
 

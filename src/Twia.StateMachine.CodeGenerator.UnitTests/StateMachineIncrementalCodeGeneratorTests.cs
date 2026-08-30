@@ -1,4 +1,9 @@
-﻿using System.IO;
+using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using System.Reflection;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Microsoft.CodeAnalysis.Testing;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
@@ -19,628 +24,159 @@ public sealed class StateMachineIncrementalCodeGeneratorTests
         _verifier.AddAdditionalFileReferences("Twia.StateMachine.dll");
     }
 
-    [TestMethod]
-    public async Task Generator_WithNoAttribute_GeneratesNoCode()
+    private static readonly string _initialStateTestDir = Path.Combine("TestFiles", "Sync");
+
+    public static IEnumerable<object[]> InitialStateTestCases()
     {
-        const string code = """
-            /***
-            * Name: Partial class without StateMachine attribute
-            * Output: None
-            ***/
-            namespace Twia.StateMachine.CodeGenerator.UnitTests;
-            
-            public partial class UnitTestEmptyStateMachine
+        var dir = Path.Combine(AppContext.BaseDirectory, _initialStateTestDir);
+        if (!Directory.Exists(dir))
+        {
+            yield break;
+        }
+
+        foreach (var file in Directory.EnumerateFiles(dir, "*.cs", SearchOption.AllDirectories)
+            .Where(f => !f.EndsWith(".e.cs", StringComparison.OrdinalIgnoreCase))
+            .OrderBy(f => f))
+        {
+            var relative = Path.GetRelativePath(dir, file);
+            yield return [relative];
+        }
+    }
+
+    public static string InitialStateDisplayName(MethodInfo methodInfo, object[] data)
+    {
+        var relative = (string)data[0];
+        var path = Path.Combine(AppContext.BaseDirectory, _initialStateTestDir, relative);
+        var subDir = Path.GetDirectoryName(relative)?.Replace(Path.DirectorySeparatorChar, '/') ?? string.Empty;
+        var name = Path.GetFileNameWithoutExtension(relative);
+        if (File.Exists(path))
+        {
+            var header = ParseHeader(File.ReadAllText(path));
+            if (!string.IsNullOrWhiteSpace(header.Name))
             {
+                name = header.Name!;
             }
-            """;
-
-        await _verifier.VerifyGeneratorAsyncWithEmptyResult([code]);
+        }
+        return string.IsNullOrEmpty(subDir) ? name : $"{subDir}: {name}";
     }
 
     [TestMethod]
-    public async Task Generator_OnRecordType_GeneratesNoCode()
+    [DynamicData(
+        nameof(InitialStateTestCases),
+        DynamicDataDisplayName = nameof(InitialStateDisplayName))]
+    public async Task Generator_FromSourceFile_GeneratesCorrectResult(string fileName)
     {
-        const string code = """
-                            /***
-                            * Name: StateMachine attribute On Record Type
-                            * Output: None
-                            ***/
-                            
-                            using Twia.StateMachine;
+        var path = Path.Combine(AppContext.BaseDirectory, _initialStateTestDir, fileName);
+        var code = await File.ReadAllTextAsync(path, _testContext.CancellationToken);
+        var header = ParseHeader(code);
 
-                            namespace Twia.StateMachine.CodeGenerator.UnitTests;
+        if (!header.HasHeader)
+        {
+            Assert.Fail($"Test file '{fileName}' is missing a header block (/*** ... ***/).");
+        }
 
-                            [StateMachine]
-                            public partial record UnitTestEmptyStateMachine
-                            {
-                            }
-                            """;
+        var output = header.Output ?? "None";
+        if (!string.Equals(output, "Source", StringComparison.OrdinalIgnoreCase)
+            && !string.Equals(output, "None", StringComparison.OrdinalIgnoreCase))
+        {
+            Assert.Fail($"Test file '{fileName}' has invalid Output '{output}'. Expected 'Source' or 'None'.");
+        }
 
-        await _verifier.VerifyGeneratorAsyncWithEmptyResult([code]);
+        if (string.Equals(output, "Source", StringComparison.OrdinalIgnoreCase))
+        {
+            var expectedPath = Path.ChangeExtension(path, null) + ".e.cs";
+            if (!File.Exists(expectedPath))
+            {
+                Assert.Fail($"Expected generated source file '{Path.GetFileName(expectedPath)}' is missing for test '{fileName}'.");
+            }
+
+            var expectedCode = await File.ReadAllTextAsync(expectedPath, _testContext.CancellationToken);
+            if (header.Diagnostics.Count == 0)
+            {
+                await _verifier.VerifyGeneratorAsync([code], ("*UnitTestEmptyStateMachine*", expectedCode));
+            }
+            else
+            {
+                await _verifier.VerifyGeneratorAsyncWithDiagnostics([code], [.. header.Diagnostics], ("*UnitTestEmptyStateMachine*", expectedCode));
+            }
+            return;
+        }
+
+        if (header.Diagnostics.Count == 0)
+        {
+            await _verifier.VerifyGeneratorAsyncWithEmptyResult([code]);
+        }
+        else
+        {
+            await _verifier.VerifyGeneratorAsyncWithOnlyDiagnostics([code], [.. header.Diagnostics]);
+        }
     }
 
-    [TestMethod]
-    public async Task Generator_NotPartialClass_GeneratesNoCode()
+    private sealed record HeaderInfo(bool HasHeader, string? Name, string? Output, List<DiagnosticResult> Diagnostics);
+
+    private static readonly Regex _headerBlockRegex = new(
+        @"/\*\*\*(?<body>.*?)\*\*\*/",
+        RegexOptions.Singleline | RegexOptions.Compiled);
+
+    private static readonly Regex _nameRegex = new(
+        @"^\s*\*\s*Name\s*:\s*(?<name>.+?)\s*$",
+        RegexOptions.Multiline | RegexOptions.Compiled);
+
+    private static readonly Regex _outputRegex = new(
+        @"^\s*\*\s*Output\s*:\s*(?<output>.+?)\s*$",
+        RegexOptions.Multiline | RegexOptions.Compiled);
+
+    private static readonly Regex _diagnosticLineRegex = new(
+        @"^\s*\*\s*-\s*(?<id>SMG\d+)\s*,\s*(?<line>\d+)\s*,\s*(?<column>\d+)(?<args>(?:\s*,\s*""(?:[^""\\]|\\.)*"")*)\s*$",
+        RegexOptions.Multiline | RegexOptions.Compiled);
+
+    private static readonly Regex _quotedArgRegex = new(
+        @"""(?<value>(?:[^""\\]|\\.)*)""",
+        RegexOptions.Compiled);
+
+    private static HeaderInfo ParseHeader(string source)
     {
-        const string code = """
-                            /***
-                            * Name: StateMachine attribute not partial class
-                            * Output: None
-                            ***/
-                            
-                            using Twia.StateMachine;
-                            
-                            namespace Twia.StateMachine.CodeGenerator.UnitTests;
-                            
-                            [StateMachine]
-                            public class UnitTestEmptyStateMachine
-                            {
-                            }
-                            """;
-
-        var diagnostics = DiagnosticResult
-            .CompilerError("SMG0001")
-            .WithLocation(11, 14)
-            .WithArguments("UnitTestEmptyStateMachine");
-        await _verifier.VerifyGeneratorAsyncWithOnlyDiagnostics([code], [diagnostics]);
-    }
-
-    [TestMethod]
-    public async Task Generator_NoInitialState_GeneratesNoCode()
-    {
-        const string code = """
-                            /***
-                            * Name: No Initial State
-                            * Output: None
-                            * Diagnostics:
-                            * - SMG0003, 13, 20, "UnitTestEmptyStateMachine"
-                            ***/
-                            
-                            using Twia.StateMachine;
-
-                            namespace Twia.StateMachine.CodeGenerator.UnitTests;
-
-                            [StateMachine]
-                            public partial class UnitTestEmptyStateMachine
-                            {
-                                [State]
-                                public partial void State1();
-
-                                [State]
-                                public partial void State2();
-
-                            }
-                            """;
-
-        var diagnostics = DiagnosticResult
-            .CompilerError("SMG0003")
-            .WithLocation(13, 22)
-            .WithArguments("UnitTestEmptyStateMachine");
-        await _verifier.VerifyGeneratorAsyncWithOnlyDiagnostics([code], [diagnostics]);
-    }
-
-    [TestMethod]
-    public async Task Generator_MultipleInitialStates_GeneratesNoCode()
-    {
-        const string code = """
-                            /***
-                            * Name: Multiple Initial States 
-                            * Output: None
-                            * Diagnostics:
-                            * - SMG0002, 19, 25, "State2", "State1"
-                            ***/
-                            
-                            using Twia.StateMachine;
-
-                            namespace Twia.StateMachine.CodeGenerator.UnitTests;
-
-                            [StateMachine]
-                            public partial class UnitTestEmptyStateMachine
-                            {
-                                [InitialState]
-                                public partial void State1();
-
-                                [InitialState]
-                                public partial void State2();
-                            }
-                            """;
-
-        var diagnostics = DiagnosticResult
-            .CompilerError("SMG0002")
-            .WithLocation(19, 25)
-            .WithArguments("State2", "State1");
-        await _verifier.VerifyGeneratorAsyncWithOnlyDiagnostics([code], [diagnostics]);
-    }
-
-    [TestMethod]
-    public async Task Generator_NotExistingTriggers_GeneratesErrors()
-    {
-        const string code = """
-                            /***
-                            * Name: Not existing Triggers
-                            * Output: None
-                            * Diagnostics:
-                            * - SMG0010, 18, 25, "Trigger1", "State1"
-                            * - SMG0010, 22, 25, "Trigger2", "State2"
-                            ***/
-                            
-                            using Twia.StateMachine;
-
-                            namespace Twia.StateMachine.CodeGenerator.UnitTests;
-
-                            [StateMachine]
-                            public partial class UnitTestEmptyStateMachine
-                            {
-                                [InitialState]
-                                [Transition("Trigger1", "State2")]
-                                public partial void State1();
-
-                                [State]
-                                [InternalTransition("Trigger2", "Work()")]
-                                public partial void State2();
-                                
-                                public void Work() {}
-                            }
-                            """;
-
-        var diagnostics1 = DiagnosticResult
-            .CompilerError("SMG0010")
-            .WithLocation(18, 25)
-            .WithArguments("Trigger1", "State1");
-        var diagnostics2 = DiagnosticResult
-            .CompilerError("SMG0010")
-            .WithLocation(22, 25)
-            .WithArguments("Trigger2", "State2");
-        await _verifier.VerifyGeneratorAsyncWithOnlyDiagnostics([code], [diagnostics1, diagnostics2]);
-    }
-
-    [TestMethod]
-    public async Task Generator_NotExistingStates_GeneratesErrors()
-    {
-        const string code = """
-                            /***
-                            * Name: Not existing States
-                            * Output: None
-                            * Diagnostics:
-                            * - SMG0011, 19, 25, "State4", "State1"
-                            * - SMG0011, 23, 25, "State5", "State2"
-                            * - SMG0011, 27, 25, "State6", "State3"
-                            ***/
-                            
-                            using Twia.StateMachine;
-
-                            namespace Twia.StateMachine.CodeGenerator.UnitTests;
-
-                            [StateMachine]
-                            public partial class UnitTestEmptyStateMachine
-                            {
-                                [InitialState]
-                                [Transition("Trigger1", "State4")]
-                                public partial void State1();
-
-                                [State]
-                                [TriggerlessTransition("State5")]
-                                public partial void State2();
-                            
-                                [State]
-                                [TransitionAfter("0:00:01", "State6")]
-                                public partial void State3();
-                                
-                                [Trigger]
-                                public partial void Trigger1();
-                                
-                                public void Work()
-                                {
-                                }
-                            }
-                            """;
-
-        var diagnostics1 = DiagnosticResult
-            .CompilerError("SMG0011")
-            .WithLocation(19, 25)
-            .WithArguments("State4", "State1");
-        var diagnostics2 = DiagnosticResult
-            .CompilerError("SMG0011")
-            .WithLocation(23, 25)
-            .WithArguments("State5", "State2");
-        var diagnostics3 = DiagnosticResult
-            .CompilerError("SMG0011")
-            .WithLocation(27, 25)
-            .WithArguments("State6", "State3");
-        await _verifier.VerifyGeneratorAsyncWithOnlyDiagnostics([code], [diagnostics1, diagnostics2, diagnostics3]);
-    }
-
-
-    [TestMethod]
-    public async Task Generator_InvalidPeriod_GeneratesErrors()
-    {
-        const string code = """
-                            /***
-                            * Name: Invalid Period
-                            * Output: None
-                            * Diagnostics:
-                            * - SMG0012, 19, 25, "a", "State1"
-                            * - SMG0012, 24, 25, "T1H", "State2"
-                            * - SMG0012, 24, 25, "2 seconds", "State2"
-                            ***/
-                            
-                            using Twia.StateMachine;
-
-                            namespace Twia.StateMachine.CodeGenerator.UnitTests;
-
-                            [StateMachine]
-                            public partial class UnitTestEmptyStateMachine
-                            {
-                                [InitialState]
-                                [TransitionAfter("a", "State2")]
-                                public partial void State1();
-
-                                [State]
-                                [TransitionAfter("T1H", "State2")]
-                                [TransitionAfter("2 seconds", "State2")] 
-                                public partial void State2();
-                            }
-                            """;
-
-        var diagnostics1 = DiagnosticResult
-            .CompilerError("SMG0012")
-            .WithLocation(19, 25)
-            .WithArguments("a", "State1");
-        var diagnostics2 = DiagnosticResult
-            .CompilerError("SMG0012")
-            .WithLocation(24, 25)
-            .WithArguments("T1H", "State2");
-        var diagnostics3 = DiagnosticResult
-            .CompilerError("SMG0012")
-            .WithLocation(24, 25)
-            .WithArguments("2 seconds", "State2");
-        await _verifier.VerifyGeneratorAsyncWithOnlyDiagnostics([code], [diagnostics1, diagnostics2, diagnostics3]);
-    }
-
-    [TestMethod]
-    public async Task Generator_MethodIsStateAndTrigger_GeneratesNoCode()
-    {
-        const string code = """
-                            /***
-                            * Name: Method Is State And Trigger
-                            * Output: None
-                            * Diagnostics:
-                            * - SMG0004, 16, 25, "State1"
-                            ***/
-
-                            using Twia.StateMachine;
-
-                            namespace Twia.StateMachine.CodeGenerator.UnitTests;
-
-                            [StateMachine]
-                            public partial class UnitTestEmptyStateMachine
-                            {
-                                [Trigger, State]
-                                public partial void State1()
-                                {
-                                }
-
-                                [InitialState]
-                                public partial void State2()
-                                {
-                                }
-                            }
-                            """;
-
-        var diagnostics = DiagnosticResult
-            .CompilerError("SMG0004")
-            .WithLocation(16, 25)
-            .WithArguments("State1");
-        await _verifier.VerifyGeneratorAsyncWithOnlyDiagnostics([code], [diagnostics]);
-    }
-
-    [TestMethod]
-    public async Task Generator_MethodIsNotStateButHasTransitionAttributes_GeneratesNoCode()
-    {
-        const string code = """
-                            /***
-                            * Name: Method Is Not State But Has Transition Attributes
-                            * Output: None
-                            * Diagnostics:
-                            * - SMG0005, 19, 25, "State1"
-                            * - SMG0005, 22, 25, "State2"
-                            * - SMG0005, 25, 25, "State3"
-                            * - SMG0005, 28, 25, "State4"
-                            ***/
-
-                            using Twia.StateMachine;
-
-                            namespace Twia.StateMachine.CodeGenerator.UnitTests;
-
-                            [StateMachine]
-                            public partial class UnitTestEmptyStateMachine
-                            {
-                                [OnEntry("DoNothing()")]
-                                public partial void State1();
-
-                                [OnExit("DoNothing()")]
-                                public partial void State2();
-                            
-                                [Transition("Trigger1", "State1")]
-                                public partial void State3();
-                                
-                                [TransitionAfter("00:00:01", "State1")]
-                                public partial void State4();
-
-                                [InitialState]
-                                public partial void State5();
-                                
-                                [Trigger]
-                                public partial void Trigger1();
-                            }
-                            """;
-
-        var diagnostics1 = DiagnosticResult
-            .CompilerError("SMG0005")
-            .WithLocation(19, 25)
-            .WithArguments("State1");
-        var diagnostics2 = DiagnosticResult
-            .CompilerError("SMG0005")
-            .WithLocation(22, 25)
-            .WithArguments("State2");
-        var diagnostics3 = DiagnosticResult
-            .CompilerError("SMG0005")
-            .WithLocation(25, 25)
-            .WithArguments("State3");
-        var diagnostics4 = DiagnosticResult
-            .CompilerError("SMG0005")
-            .WithLocation(28, 25)
-            .WithArguments("State4");
-        await _verifier.VerifyGeneratorAsyncWithOnlyDiagnostics([code], [diagnostics1, diagnostics2, diagnostics3, diagnostics4]);
-    }
-
-    [TestMethod]
-    public async Task Generator_MethodIsTriggerButHasTransitionAttributes_GeneratesNoCode()
-    {
-        const string code = """
-                            /***
-                            * Name: Method Is Trigger But Has Transition Attributes
-                            * Output: None
-                            * Diagnostics:
-                            * - SMG0006, 19, 25, "State1"
-                            * - SMG0006, 22, 25, "State2"
-                            * - SMG0006, 25, 25, "State3"
-                            * - SMG0006, 28, 25, "State4"
-                            ***/
-
-                            using Twia.StateMachine;
-
-                            namespace Twia.StateMachine.CodeGenerator.UnitTests;
-
-                            [StateMachine]
-                            public partial class UnitTestEmptyStateMachine
-                            {
-                                [Trigger, OnEntry("DoNothing()")]
-                                public partial void State1();
-
-                                [Trigger, OnExit("DoNothing()")]
-                                public partial void State2();
-                            
-                                [Trigger, Transition("Trigger1", "State1")]
-                                public partial void State3();
-                                
-                                [Trigger, TransitionAfter("00:00:01", "State1")]
-                                public partial void State4();
-
-                                [InitialState]
-                                public partial void State5();
-                                
-                                [Trigger]
-                                public partial void Trigger1();
-                            }
-                            """;
-
-        var diagnostics1 = DiagnosticResult
-            .CompilerError("SMG0006")
-            .WithLocation(19, 25)
-            .WithArguments("State1");
-        var diagnostics2 = DiagnosticResult
-            .CompilerError("SMG0006")
-            .WithLocation(22, 25)
-            .WithArguments("State2");
-        var diagnostics3 = DiagnosticResult
-            .CompilerError("SMG0006")
-            .WithLocation(25, 25)
-            .WithArguments("State3");
-        var diagnostics4 = DiagnosticResult
-            .CompilerError("SMG0006")
-            .WithLocation(28, 25)
-            .WithArguments("State4");
-        await _verifier.VerifyGeneratorAsyncWithOnlyDiagnostics([code], [diagnostics1, diagnostics2, diagnostics3, diagnostics4]);
-    }
-
-    [TestMethod]
-    public async Task Generator_TriggerOrStateMethodNotPartial_GeneratesNoCode()
-    {
-        const string code = """
-                            /***
-                            * Name: Trigger Or State Method Not Partial
-                            * Output: None
-                            * Diagnostics:
-                            * - SMG0007, 17, 17, "State1"
-                            * - SMG0007, 20, 17, "Trigger1"
-                            ***/
-
-                            using Twia.StateMachine;
-
-                            namespace Twia.StateMachine.CodeGenerator.UnitTests;
-
-                            [StateMachine]
-                            public partial class UnitTestEmptyStateMachine
-                            {
-                                [InitialState]
-                                public void State1();
-
-                                [Trigger]
-                                public void Trigger1();
-                            }
-                            """;
-
-        var diagnostics1 = DiagnosticResult
-            .CompilerError("SMG0007")
-            .WithLocation(17, 17)
-            .WithArguments("State1");
-        var diagnostics2 = DiagnosticResult
-            .CompilerError("SMG0007")
-            .WithLocation(20, 17)
-            .WithArguments("Trigger1");
-        await _verifier.VerifyGeneratorAsyncWithOnlyDiagnostics([code], [diagnostics1, diagnostics2]);
-    }
-    
-    [TestMethod]
-    public async Task Generator_TriggerOrStateMethodNotVoid_GeneratesNoCode()
-    {
-        const string code = """
-                            /***
-                            * Name: Trigger Or State Method Not Void
-                            * Output: None
-                            * Diagnostics:
-                            * - SMG0008, 17, 25, "State1"
-                            * - SMG0008, 20, 25, "Trigger1Async"
-                            ***/
-
-                            using Twia.StateMachine;
-
-                            namespace Twia.StateMachine.CodeGenerator.UnitTests;
-
-                            [StateMachine]
-                            public partial class UnitTestEmptyStateMachine
-                            {
-                                [InitialState]
-                                public partial bool State1();
-
-                                [Trigger]
-                                public partial Task Trigger1Async();
-                            }
-                            """;
-
-        var diagnostics1 = DiagnosticResult
-            .CompilerError("SMG0008")
-            .WithLocation(17, 25)
-            .WithArguments("State1");
-        var diagnostics2 = DiagnosticResult
-            .CompilerError("SMG0008")
-            .WithLocation(20, 25)
-            .WithArguments("Trigger1Async");
-        await _verifier.VerifyGeneratorAsyncWithOnlyDiagnostics([code], [diagnostics1, diagnostics2]);
-    }
-
-    [TestMethod]
-    public async Task Generator_TriggerOrStateWithParameters_GeneratesNoCode()
-    {
-        const string code = """
-                            /***
-                            * Name: Trigger Or State With Parameters
-                            * Output: None
-                            * Diagnostics:
-                            * - SMG0009, 18, 25, "State1"
-                            * - SMG0009, 21, 25, "Trigger1Async"
-                            ***/
-
-                            using Twia.StateMachine;
-                            using System.Threading;
-
-                            namespace Twia.StateMachine.CodeGenerator.UnitTests;
-
-                            [StateMachine]
-                            public partial class UnitTestEmptyStateMachine
-                            {
-                                [InitialState]
-                                public partial void State1(string name);
-
-                                [Trigger]
-                                public partial void Trigger1Async(CancellationToken ct);
-                            }
-                            """;
-
-        var diagnostics1 = DiagnosticResult
-            .CompilerError("SMG0009")
-            .WithLocation(18, 25)
-            .WithArguments("State1");
-        var diagnostics2 = DiagnosticResult
-            .CompilerError("SMG0009")
-            .WithLocation(21, 25)
-            .WithArguments("Trigger1Async");
-        await _verifier.VerifyGeneratorAsyncWithOnlyDiagnostics([code], [diagnostics1, diagnostics2]);
-    }
-
-    [TestMethod]
-    public async Task Generator_WithMixOfErrors_ReportsThemAll()
-    {
-        const string code = """
-                            /***
-                            * Name: With Mix Of Errors
-                            * Output: None
-                            * Diagnostics:
-                            * - SMG0001, 17, 14, "UnitTestEmptyStateMachine"
-                            * - SMG0003, 17, 14, "UnitTestEmptyStateMachine"
-                            * - SMG0006, 20, 25, "State1"
-                            * - SMG0005, 23, 25, "State2"
-                            * - SMG0007, 26, 17, "State3"
-                            ***/
-
-                            using Twia.StateMachine;
-
-                            namespace Twia.StateMachine.CodeGenerator.UnitTests;
-
-                            [StateMachine]
-                            public class UnitTestEmptyStateMachine
-                            {
-                                [Trigger, OnEntry("DoNothing()")]
-                                public partial void State1();
-
-                                [OnExit("DoNothing()")]
-                                public partial void State2();
-                            
-                                [State]
-                                public void State3();
-                            }
-                            """;
-
-        var diagnostics1 = DiagnosticResult
-            .CompilerError("SMG0001")
-            .WithLocation(17, 14)
-            .WithArguments("UnitTestEmptyStateMachine");
-        var diagnostics2 = DiagnosticResult
-            .CompilerError("SMG0003")
-            .WithLocation(17, 14)
-            .WithArguments("UnitTestEmptyStateMachine");
-        var diagnostics3 = DiagnosticResult
-            .CompilerError("SMG0006")
-            .WithLocation(20, 25)
-            .WithArguments("State1");
-        var diagnostics4 = DiagnosticResult
-            .CompilerError("SMG0005")
-            .WithLocation(23, 25)
-            .WithArguments("State2");
-        var diagnostics5 = DiagnosticResult
-            .CompilerError("SMG0007")
-            .WithLocation(26, 17)
-            .WithArguments("State3");
-        await _verifier.VerifyGeneratorAsyncWithOnlyDiagnostics([code], [diagnostics1, diagnostics2, diagnostics3, diagnostics4, diagnostics5]);
-    }
-
-    [TestMethod(DisplayName = "GenerateSyncCode")]
-    [DataRow("WithAttributes", DisplayName = "WithAttributes")]
-    [DataRow("WithFullAttributeNames", DisplayName = "WithFullAttributeNames")]
-    [DataRow("NestedClass", DisplayName = "NestedClass")]
-    [DataRow("NoStateNoTriggers", DisplayName = "NoStateNoTriggers")]
-    [DataRow("OnlyStatesAndNoTriggers", DisplayName = "OnlyStatesAndNoTriggers")]
-    [DataRow("WithConditionsAndActions", DisplayName = "WithConditionsAndActions")]
-    [DataRow("Observable", DisplayName = "Observable")]
-    public async Task Generator_GeneratesSyncCode(string testDataName)
-    {
-        var code = await File.ReadAllTextAsync($"TestFiles/sync/{testDataName}.cs", _testContext.CancellationToken);
-        var expectedCode = await File.ReadAllTextAsync($"TestFiles/sync/{testDataName}.e.cs", _testContext.CancellationToken);
-#if SNAPSHOTS
-        _verifier.OutputFile = Path.Join(Path.GetTempPath(), $"{testDataName}.g.cs");
-#endif
-
-        await _verifier.VerifyGeneratorAsync([code], ("*UnitTestEmptyStateMachine*", expectedCode));
+        var diagnostics = new List<DiagnosticResult>();
+        string? name = null;
+
+        var blockMatch = _headerBlockRegex.Match(source);
+        if (!blockMatch.Success)
+        {
+            return new HeaderInfo(false, name, null, diagnostics);
+        }
+
+        var body = blockMatch.Groups["body"].Value;
+
+        var nameMatch = _nameRegex.Match(body);
+        if (nameMatch.Success)
+        {
+            name = nameMatch.Groups["name"].Value.Trim();
+        }
+
+        string? output = null;
+        var outputMatch = _outputRegex.Match(body);
+        if (outputMatch.Success)
+        {
+            output = outputMatch.Groups["output"].Value.Trim();
+        }
+
+        foreach (Match match in _diagnosticLineRegex.Matches(body))
+        {
+            var id = match.Groups["id"].Value;
+            var line = int.Parse(match.Groups["line"].Value, System.Globalization.CultureInfo.InvariantCulture);
+            var column = int.Parse(match.Groups["column"].Value, System.Globalization.CultureInfo.InvariantCulture);
+            var args = _quotedArgRegex.Matches(match.Groups["args"].Value)
+                .Select(m => Regex.Unescape(m.Groups["value"].Value))
+                .Cast<object>()
+                .ToArray();
+
+            var result = DiagnosticResult
+                .CompilerError(id)
+                .WithLocation(line, column)
+                .WithArguments(args);
+            diagnostics.Add(result);
+        }
+
+        return new HeaderInfo(true, name, output, diagnostics);
     }
 }

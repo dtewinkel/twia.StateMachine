@@ -1,4 +1,9 @@
-﻿using Twia.StateMachine;
+﻿/***
+ * Name: StateMachine with full attribute names
+ * Output: Source
+ ***/
+
+using Twia.StateMachine;
 
 namespace Twia.StateMachine.CodeGenerator.UnitTests;
 

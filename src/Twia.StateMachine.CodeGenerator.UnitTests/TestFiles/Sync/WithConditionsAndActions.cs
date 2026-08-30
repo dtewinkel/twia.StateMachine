@@ -1,4 +1,9 @@
-﻿using Twia.StateMachine;
+﻿/***
+ * Name: StateMachine with conditions and actions on transitions
+ * Output: Source
+ ***/
+
+using Twia.StateMachine;
 
 namespace Twia.StateMachine.CodeGenerator.UnitTests;
 

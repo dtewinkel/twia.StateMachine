@@ -116,6 +116,10 @@ internal class IncrementalGeneratorVerifier<TGenerator> : CSharpSourceGeneratorT
     public async Task<string> VerifyGeneratorAsyncWithOnlyDiagnostics(string[] sources, DiagnosticResult[] diagnostics)
         => await VerifyGeneratorAsync(sources, diagnostics);
 
+    public async Task<string> VerifyGeneratorAsyncWithDiagnostics(string[] sources, DiagnosticResult[] diagnostics,
+        params (string filename, string content)[] generatedSources)
+        => await VerifyGeneratorAsync(sources, diagnostics, generatedSources);
+
     private async Task<string> VerifyGeneratorAsync(string[] sources, DiagnosticResult[] diagnostics,
         params (string filename, string content)[] generatedSources)
     {
